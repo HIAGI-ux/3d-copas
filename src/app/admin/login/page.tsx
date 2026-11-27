@@ -1,0 +1,86 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import toast from 'react-hot-toast'
+import Link from 'next/link'
+
+export default function AdminLoginPage() {
+  const router = useRouter()
+  const supabase = createClient()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setLoading(false)
+      toast.error('Email o contraseña incorrectos.')
+      return
+    }
+
+    if (data.user?.user_metadata?.role !== 'admin') {
+      await supabase.auth.signOut()
+      setLoading(false)
+      toast.error('Esta cuenta no tiene permisos de administrador.')
+      return
+    }
+
+    toast.success('Sesión iniciada en el panel')
+    router.push('/admin')
+    router.refresh()
+  }
+
+  return (
+    <div className="min-h-screen bg-copas-crema flex items-center justify-center p-4">
+      <div className="bg-white rounded-card border border-copas-plata shadow-lg p-6 sm:p-8 w-full max-w-md">
+        <div className="flex flex-col items-center mb-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-3d-copas.svg"
+            alt="3D Copas"
+            className="w-16 h-16 rounded-full border border-copas-plata p-1 mb-3"
+          />
+          <h1 className="font-heading text-2xl font-black text-copas-marino">
+            Panel de Administrador
+          </h1>
+          <p className="text-sm text-copas-plata-oscuro">Uso exclusivo de 3D Copas</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="flex flex-col gap-4">
+          <Input
+            label="Email de administrador"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
+          <Input
+            label="Contraseña"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
+          <Button type="submit" size="lg" loading={loading} className="mt-2">
+            Ingresar al panel
+          </Button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <Link href="/" className="text-xs text-copas-azul font-semibold hover:underline">
+            ← Volver a la tienda pública
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
