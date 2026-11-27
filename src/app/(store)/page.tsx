@@ -5,6 +5,7 @@ import ProductosDestacados from '@/components/store/ProductosDestacados'
 import CatalogoProductos from '@/components/store/CatalogoProductos'
 import ModalPersonalizado from '@/components/store/ModalPersonalizado'
 import DBErrorBanner from '@/components/ui/DBErrorBanner'
+import { Truck, MapPin, CreditCard, SlidersHorizontal } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,16 +53,74 @@ export default async function HomePage({
   return (
     <>
       {config.banner_active && <BannerTemporada config={config} />}
+
+      {/* Barra de beneficios estilo Tiendanube */}
+      <section className="border-b border-neutral-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="flex items-start gap-3">
+            <Truck size={20} strokeWidth={1.5} className="text-neutral-800 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-900">
+                Envíos a todo el país
+              </p>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Andreani, Correo Argentino y Via Cargo
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <MapPin size={20} strokeWidth={1.5} className="text-neutral-800 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-900">
+                Retiro en Balcarce
+              </p>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Sin cargo coordinando horario
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <CreditCard size={20} strokeWidth={1.5} className="text-neutral-800 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-900">
+                Transferencia o efectivo
+              </p>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Coordinación directa por WhatsApp
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <SlidersHorizontal
+              size={20}
+              strokeWidth={1.5}
+              className="text-neutral-800 shrink-0 mt-0.5"
+            />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-900">
+                Impresión 3D a medida
+              </p>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Diseños y tamaños personalizados
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {config.welcome_message && (
-        <div className="max-w-7xl mx-auto px-4 mt-4">
-          <div className="bg-copas-azul/10 border-l-4 border-copas-azul px-4 py-3 rounded-r-lg">
-            <p className="text-copas-marino font-heading font-semibold">
-              {config.welcome_message}
-            </p>
+        <div className="max-w-7xl mx-auto px-4 mt-6">
+          <div className="bg-neutral-50 border border-neutral-200 px-4 py-3 rounded-md text-center">
+            <p className="text-sm text-neutral-700 font-medium">{config.welcome_message}</p>
           </div>
         </div>
       )}
+
       {featured.length > 0 && <ProductosDestacados products={featured} />}
+
       <CatalogoProductos
         products={products}
         categories={categories}
@@ -69,6 +128,7 @@ export default async function HomePage({
         initialSearch={searchParams.buscar}
         whatsapp={config.whatsapp}
       />
+
       {showPersonalModal && <ModalPersonalizado whatsapp={config.whatsapp} />}
     </>
   )

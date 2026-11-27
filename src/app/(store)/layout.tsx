@@ -19,7 +19,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
 
   return (
     <CartProvider>
-      <div className="min-h-screen flex flex-col bg-copas-crema">
+      <div className="min-h-screen flex flex-col bg-white text-neutral-900">
         <StoreHeader config={businessConfig} />
         <main className="flex-1">{children}</main>
         <StoreFooter config={businessConfig} />

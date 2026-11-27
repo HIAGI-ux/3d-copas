@@ -1,4 +1,5 @@
 import { BusinessConfig } from '@/types'
+import Link from 'next/link'
 
 export default function StoreFooter({ config }: { config: BusinessConfig | null }) {
   const instagramUrl = config?.instagram
@@ -25,9 +26,9 @@ export default function StoreFooter({ config }: { config: BusinessConfig | null 
     .join(', ')
 
   return (
-    <footer className="bg-copas-marino text-white mt-12">
-      <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-8">
+    <footer className="bg-neutral-950 text-neutral-300 mt-16 border-t border-neutral-800">
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 mb-10">
           {/* Marca */}
           <div>
             <div className="flex items-center gap-2.5 mb-3">
@@ -35,63 +36,76 @@ export default function StoreFooter({ config }: { config: BusinessConfig | null 
               <img
                 src={config?.logo_url || '/logo-3d-copas.svg'}
                 alt={config?.name || '3D Copas'}
-                className="w-10 h-10 rounded-full object-contain bg-white p-0.5"
+                className="w-8 h-8 object-contain bg-white rounded-sm p-0.5"
               />
-              <div>
-                <h3 className="font-heading font-black text-lg text-copas-dorado">
-                  {config?.name || '3D Copas'}
-                </h3>
-                <p className="text-xs text-copas-plata">
-                  {config?.slogan || 'Hecho a pedido en impresión 3D'}
-                </p>
-              </div>
+              <h3 className="font-semibold text-base text-white tracking-tight">
+                {config?.name || '3D Copas'}
+              </h3>
             </div>
-            <p className="text-sm text-copas-plata">
-              {config?.footer_text || 'Hecho a pedido en impresión 3D'}
+            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+              {config?.footer_text || config?.slogan || 'Impresión 3D a pedido desde Balcarce.'}
             </p>
-            <p className="text-xs text-copas-dorado font-semibold mt-3">
-              🚚 Hacemos envíos a toda la Argentina
-              {activeTransportes ? ` (${activeTransportes})` : ''}
+            <p className="text-xs text-neutral-400 mt-3">
+              Envíos a toda la Argentina{activeTransportes ? ` (${activeTransportes})` : ''}.
             </p>
           </div>
 
-          {/* Políticas */}
+          {/* Información de compra */}
           <div>
-            <h4 className="font-heading font-bold mb-3 text-white">Políticas de compra</h4>
-            <div className="space-y-2 text-xs sm:text-sm text-copas-plata">
-              {config?.returns_policy && (
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-white mb-4">
+              Información de compra
+            </h4>
+            <div className="space-y-2.5 text-xs text-neutral-400 leading-relaxed">
+              {config?.delivery_times_text && (
                 <p>
-                  <span className="text-white font-semibold">Arrepentimiento:</span>{' '}
-                  {config.returns_policy}
+                  <span className="text-neutral-200 font-medium">Tiempos de entrega:</span>{' '}
+                  {config.delivery_times_text}
                 </p>
               )}
               {config?.exchange_policy && (
                 <p>
-                  <span className="text-white font-semibold">Cambios:</span>{' '}
+                  <span className="text-neutral-200 font-medium">Cambios:</span>{' '}
                   {config.exchange_policy}
                 </p>
               )}
-              {config?.delivery_times_text && (
+              {config?.returns_policy && (
                 <p>
-                  <span className="text-white font-semibold">Tiempos de entrega:</span>{' '}
-                  {config.delivery_times_text}
+                  <span className="text-neutral-200 font-medium">Arrepentimiento:</span>{' '}
+                  {config.returns_policy}
                 </p>
               )}
+              <div className="pt-1">
+                <Link href="/cuenta" className="text-neutral-200 hover:text-white underline">
+                  Seguir mi pedido
+                </Link>
+              </div>
             </div>
           </div>
 
           {/* Contacto y redes */}
           <div>
-            <h4 className="font-heading font-bold mb-3 text-white">Seguinos y consultanos</h4>
-            <div className="flex flex-wrap gap-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-white mb-4">
+              Contacto y redes
+            </h4>
+            <div className="flex flex-col space-y-2 text-xs sm:text-sm text-neutral-400">
+              {whatsappUrl && (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors"
+                >
+                  WhatsApp
+                </a>
+              )}
               {instagramUrl && (
                 <a
                   href={instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-copas-plata hover:text-copas-dorado transition-colors"
+                  className="hover:text-white transition-colors"
                 >
-                  📷 Instagram
+                  Instagram
                 </a>
               )}
               {tiktokUrl && (
@@ -99,9 +113,9 @@ export default function StoreFooter({ config }: { config: BusinessConfig | null 
                   href={tiktokUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-copas-plata hover:text-copas-dorado transition-colors"
+                  className="hover:text-white transition-colors"
                 >
-                  🎵 TikTok
+                  TikTok
                 </a>
               )}
               {facebookUrl && (
@@ -109,30 +123,28 @@ export default function StoreFooter({ config }: { config: BusinessConfig | null 
                   href={facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-copas-plata hover:text-copas-dorado transition-colors"
+                  className="hover:text-white transition-colors"
                 >
-                  📘 Facebook
+                  Facebook
                 </a>
               )}
-              {whatsappUrl && (
+              {config?.email && (
                 <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-copas-plata hover:text-copas-dorado transition-colors"
+                  href={`mailto:${config.email}`}
+                  className="hover:text-white transition-colors pt-1"
                 >
-                  💬 WhatsApp
+                  {config.email}
                 </a>
               )}
             </div>
-            {config?.email && (
-              <p className="text-xs text-copas-plata mt-3">✉️ {config.email}</p>
-            )}
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-4 text-center text-xs text-copas-plata">
-          © {new Date().getFullYear()} {config?.name || '3D Copas'} — Balcarce, Buenos Aires, Argentina.
+        <div className="border-t border-neutral-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-neutral-500">
+          <span>
+            © {new Date().getFullYear()} {config?.name || '3D Copas'}. Todos los derechos reservados.
+          </span>
+          <span>Balcarce, Buenos Aires, Argentina</span>
         </div>
       </div>
     </footer>
