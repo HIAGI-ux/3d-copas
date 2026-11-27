@@ -42,7 +42,7 @@ export default async function HomePage({
 
   const config = configRes.data as BusinessConfig
   const categories = (categoriesRes.data || []) as Category[]
-  const products = (productsRes.data || []) as Product[]
+  const products = (productsRes.data || []) as unknown as Product[]
 
   const featured = products
     .filter((p) => p.featured)

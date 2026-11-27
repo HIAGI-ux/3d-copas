@@ -67,7 +67,7 @@ export default function AdminProductosPage() {
         .order('sort_order'),
       supabase.from('categories').select('*').order('sort_order'),
     ])
-    if (prodRes.data) setProducts(prodRes.data as Product[])
+    if (prodRes.data) setProducts(prodRes.data as unknown as Product[])
     if (catRes.data) setCategories(catRes.data as Category[])
     setLoading(false)
   }, [supabase])

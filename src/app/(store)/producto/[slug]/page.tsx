@@ -49,7 +49,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
   return (
     <ProductDetailClient
-      product={productRes.data as Product}
+      product={productRes.data as unknown as Product}
       whatsapp={configRes.data?.whatsapp}
     />
   )
