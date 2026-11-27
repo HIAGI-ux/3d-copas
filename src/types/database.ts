@@ -109,7 +109,7 @@ export interface Product {
   shipping_width_cm?: number
   shipping_length_cm?: number
   shipping_weight_g?: number
-  packaging_cost: number
+  packaging_cost?: number
   // Solo para admin
   cost?: number
   cost_breakdown?: Json
