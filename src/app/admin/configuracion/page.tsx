@@ -208,9 +208,9 @@ export default function AdminConfiguracionPage() {
           <div className="flex items-center gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={config.logo_url || '/logo-3d-copas.svg'}
+              src={config.logo_url || '/logo-3d-copas.png'}
               alt="Logo actual"
-              className="w-16 h-16 rounded-full border border-copas-plata object-contain bg-white p-1"
+              className="h-16 w-auto rounded-lg border border-copas-plata object-contain bg-white p-1"
             />
             <label className="cursor-pointer bg-copas-crema border border-copas-plata px-3 py-2 rounded-lg text-xs font-heading font-bold text-copas-marino hover:border-copas-azul">
               Cambiar logo

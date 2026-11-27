@@ -43,9 +43,9 @@ export default function AdminLoginPage() {
         <div className="flex flex-col items-center mb-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo-3d-copas.svg"
+            src="/logo-3d-copas.png"
             alt="3D Copas"
-            className="w-16 h-16 rounded-full border border-copas-plata p-1 mb-3"
+            className="h-20 w-auto object-contain mb-3"
           />
           <h1 className="font-heading text-2xl font-black text-copas-marino">
             Panel de Administrador

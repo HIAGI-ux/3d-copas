@@ -26,21 +26,18 @@ export default function StoreFooter({ config }: { config: BusinessConfig | null 
     .join(', ')
 
   return (
-    <footer className="bg-neutral-950 text-neutral-300 mt-16 border-t border-neutral-800">
+    <footer className="bg-[#0F172A] text-neutral-300 mt-16 border-t border-neutral-800">
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 mb-10">
           {/* Marca */}
           <div>
-            <div className="flex items-center gap-2.5 mb-3">
+            <div className="flex items-center gap-3 mb-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={config?.logo_url || '/logo-3d-copas.svg'}
+                src={config?.logo_url || '/logo-3d-copas.png'}
                 alt={config?.name || '3D Copas'}
-                className="w-8 h-8 object-contain bg-white rounded-sm p-0.5"
+                className="h-10 w-auto object-contain bg-white rounded-md px-1.5 py-0.5"
               />
-              <h3 className="font-semibold text-base text-white tracking-tight">
-                {config?.name || '3D Copas'}
-              </h3>
             </div>
             <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
               {config?.footer_text || config?.slogan || 'Impresión 3D a pedido desde Balcarce.'}
@@ -75,7 +72,7 @@ export default function StoreFooter({ config }: { config: BusinessConfig | null 
                 </p>
               )}
               <div className="pt-1">
-                <Link href="/cuenta" className="text-neutral-200 hover:text-white underline">
+                <Link href="/cuenta" className="text-blue-400 hover:text-white underline">
                   Seguir mi pedido
                 </Link>
               </div>

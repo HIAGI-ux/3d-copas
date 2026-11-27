@@ -107,9 +107,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <div className="hidden lg:flex items-center gap-2.5 px-2 py-3 mb-4 border-b border-white/10">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logo-3d-copas.svg"
+              src="/logo-3d-copas.png"
               alt="3D Copas"
-              className="w-9 h-9 rounded-full bg-white p-0.5"
+              className="h-10 w-auto rounded bg-white px-1.5 py-0.5 object-contain"
             />
             <div>
               <p className="font-heading font-black text-sm">3D Copas</p>

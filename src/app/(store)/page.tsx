@@ -54,58 +54,48 @@ export default async function HomePage({
     <>
       {config.banner_active && <BannerTemporada config={config} />}
 
-      {/* Barra de beneficios estilo Tiendanube */}
+      {/* Barra de beneficios estilo Tiendanube con colores del logo */}
       <section className="border-b border-neutral-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="flex items-start gap-3">
-            <Truck size={20} strokeWidth={1.5} className="text-neutral-800 shrink-0 mt-0.5" />
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-50 text-[#0D52D6] rounded-full p-2.5 shrink-0">
+              <Truck size={20} strokeWidth={1.75} />
+            </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-900">
-                Envíos a todo el país
-              </p>
+              <p className="text-xs font-semibold text-[#0F172A]">Envíos a todo el país</p>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Andreani, Correo Argentino y Via Cargo
+                Andreani, Correo y Via Cargo
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <MapPin size={20} strokeWidth={1.5} className="text-neutral-800 shrink-0 mt-0.5" />
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-50 text-[#0D52D6] rounded-full p-2.5 shrink-0">
+              <MapPin size={20} strokeWidth={1.75} />
+            </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-900">
-                Retiro en Balcarce
-              </p>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Sin cargo coordinando horario
-              </p>
+              <p className="text-xs font-semibold text-[#0F172A]">Retiro en Balcarce</p>
+              <p className="text-xs text-neutral-500 mt-0.5">Sin cargo coordinando horario</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <CreditCard size={20} strokeWidth={1.5} className="text-neutral-800 shrink-0 mt-0.5" />
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-50 text-[#0D52D6] rounded-full p-2.5 shrink-0">
+              <CreditCard size={20} strokeWidth={1.75} />
+            </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-900">
-                Transferencia o efectivo
-              </p>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Coordinación directa por WhatsApp
-              </p>
+              <p className="text-xs font-semibold text-[#0F172A]">Transferencia o efectivo</p>
+              <p className="text-xs text-neutral-500 mt-0.5">Coordinación por WhatsApp</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <SlidersHorizontal
-              size={20}
-              strokeWidth={1.5}
-              className="text-neutral-800 shrink-0 mt-0.5"
-            />
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-50 text-[#0D52D6] rounded-full p-2.5 shrink-0">
+              <SlidersHorizontal size={20} strokeWidth={1.75} />
+            </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-900">
-                Impresión 3D a medida
-              </p>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Diseños y tamaños personalizados
-              </p>
+              <p className="text-xs font-semibold text-[#0F172A]">Impresión 3D a medida</p>
+              <p className="text-xs text-neutral-500 mt-0.5">Diseños y tamaños propios</p>
             </div>
           </div>
         </div>
@@ -113,8 +103,8 @@ export default async function HomePage({
 
       {config.welcome_message && (
         <div className="max-w-7xl mx-auto px-4 mt-6">
-          <div className="bg-neutral-50 border border-neutral-200 px-4 py-3 rounded-md text-center">
-            <p className="text-sm text-neutral-700 font-medium">{config.welcome_message}</p>
+          <div className="bg-blue-50/70 border border-blue-100 px-4 py-3 rounded-xl text-center">
+            <p className="text-sm text-[#0F172A] font-medium">{config.welcome_message}</p>
           </div>
         </div>
       )}
