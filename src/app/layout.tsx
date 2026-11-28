@@ -1,18 +1,6 @@
 import type { Metadata } from 'next'
-import { Nunito, Inter } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import './globals.css'
-
-const nunito = Nunito({
-  subsets: ['latin'],
-  variable: '--font-nunito',
-  weight: ['400', '600', '700', '800', '900'],
-})
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-})
 
 export const metadata: Metadata = {
   title: {
@@ -85,7 +73,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es-AR" className={`${nunito.variable} ${inter.variable}`}>
+    <html lang="es-AR">
       <body>
         {children}
         <Toaster
