@@ -6,6 +6,13 @@ import { Product, Category, ProductVariant, ProductStatus } from '@/types'
 import { formatPrice, slugify } from '@/lib/utils'
 import { compressImageFile } from '@/lib/image-compress'
 import { PLACEHOLDER_IMAGE } from '@/lib/constants'
+import {
+  PRESET_COLORS,
+  ColorOption,
+  parseColorOption,
+  serializeColorOption,
+  isLightHex,
+} from '@/lib/colors'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
@@ -39,7 +46,12 @@ export default function AdminProductosPage() {
   const [variants, setVariants] = useState<ProductVariant[]>([
     { id: 'v1', size: 'Estándar', price: 3500 },
   ])
-  const [colorsText, setColorsText] = useState('Blanco, Negro, Azul')
+  const [selectedColors, setSelectedColors] = useState<ColorOption[]>([
+    { name: 'Blanco', hex: '#FFFFFF' },
+    { name: 'Beige', hex: '#E8DCC4' },
+  ])
+  const [customColorName, setCustomColorName] = useState('')
+  const [customColorHex, setCustomColorHex] = useState('#E8DCC4')
   const [labels, setLabels] = useState<string[]>([])
   const [status, setStatus] = useState<ProductStatus>('disponible')
   const [visible, setVisible] = useState(true)
@@ -86,7 +98,12 @@ export default function AdminProductosPage() {
     setPhotos([])
     setMainPhotoIndex(0)
     setVariants([{ id: `v${Date.now()}`, size: 'Estándar', price: 3500 }])
-    setColorsText('Blanco, Negro, Azul')
+    setSelectedColors([
+      { name: 'Blanco', hex: '#FFFFFF' },
+      { name: 'Beige', hex: '#E8DCC4' },
+    ])
+    setCustomColorName('')
+    setCustomColorHex('#E8DCC4')
     setLabels([])
     setStatus('disponible')
     setVisible(true)
@@ -123,7 +140,9 @@ export default function AdminProductosPage() {
         ? p.variants
         : [{ id: 'v1', size: 'Estándar', price: 0 }]
     )
-    setColorsText((p.colors || []).join(', '))
+    setSelectedColors((p.colors || []).map(parseColorOption))
+    setCustomColorName('')
+    setCustomColorHex('#E8DCC4')
     setLabels(p.labels || [])
     setStatus(p.status)
     setVisible(p.visible)
@@ -226,10 +245,7 @@ export default function AdminProductosPage() {
     }
     setSaving(true)
 
-    const colorsArray = colorsText
-      .split(',')
-      .map((c) => c.trim())
-      .filter(Boolean)
+    const colorsArray = selectedColors.map(serializeColorOption)
 
     const payload = {
       name: name.trim(),
@@ -423,12 +439,13 @@ export default function AdminProductosPage() {
 
           <div>
             <label className="text-sm font-heading font-semibold text-copas-marino block mb-1">
-              Descripción
+              Descripción del producto
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={3}
+              rows={4}
+              placeholder="Contá detalles del producto: materiales (ej: PLA / PCB), medidas aproximadas, usos, cuidados o qué incluye. Podés usar renglones separados."
               className="w-full border-2 border-copas-plata rounded-lg p-3 text-sm text-copas-marino focus:outline-none focus:border-copas-azul"
             />
           </div>
@@ -547,18 +564,156 @@ export default function AdminProductosPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label="Colores (separados por coma)"
-              value={colorsText}
-              onChange={(e) => setColorsText(e.target.value)}
-            />
-            <Input
-              label="Tiempo de entrega estimado"
-              value={estimatedDelivery}
-              onChange={(e) => setEstimatedDelivery(e.target.value)}
-            />
+          {/* Selector visual de colores */}
+          <div className="border border-copas-plata rounded-xl p-3 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-sm font-heading font-bold text-copas-marino">
+                Colores disponibles ({selectedColors.length})
+              </span>
+              {selectedColors.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedColors([])}
+                  className="text-xs text-copas-plata-oscuro hover:text-copas-rojo"
+                >
+                  Limpiar todos
+                </button>
+              )}
+            </div>
+
+            {/* Colores elegidos */}
+            {selectedColors.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {selectedColors.map((c) => (
+                  <span
+                    key={c.name}
+                    className="inline-flex items-center gap-1.5 bg-blue-50 border border-copas-azul/40 text-copas-marino px-2.5 py-1 rounded-full text-xs font-semibold"
+                  >
+                    <span
+                      className={`w-3.5 h-3.5 rounded-full shrink-0 ${
+                        isLightHex(c.hex) ? 'border border-neutral-300' : 'border border-black/10'
+                      }`}
+                      style={{ backgroundColor: c.hex }}
+                    />
+                    {c.name}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedColors((prev) =>
+                          prev.filter((item) => item.name.toLowerCase() !== c.name.toLowerCase())
+                        )
+                      }
+                      className="text-copas-plata-oscuro hover:text-copas-rojo ml-0.5"
+                      title="Quitar color"
+                    >
+                      <X size={13} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-copas-plata-oscuro">
+                Sin colores cargados (no se mostrará selector de color en la tienda).
+              </p>
+            )}
+
+            {/* Paleta rápida de botoncitos */}
+            <div>
+              <p className="text-xs text-copas-plata-oscuro mb-1.5">
+                Tocá los colores que tenés disponibles:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {PRESET_COLORS.map((preset) => {
+                  const active = selectedColors.some(
+                    (c) => c.name.toLowerCase() === preset.name.toLowerCase()
+                  )
+                  return (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => {
+                        if (active) {
+                          setSelectedColors((prev) =>
+                            prev.filter(
+                              (c) => c.name.toLowerCase() !== preset.name.toLowerCase()
+                            )
+                          )
+                        } else {
+                          setSelectedColors((prev) => [...prev, preset])
+                        }
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs transition-all ${
+                        active
+                          ? 'border-copas-azul bg-copas-azul text-white font-bold shadow-sm'
+                          : 'border-copas-plata bg-white text-copas-marino hover:border-copas-azul'
+                      }`}
+                    >
+                      <span
+                        className={`w-3 h-3 rounded-full shrink-0 ${
+                          isLightHex(preset.hex)
+                            ? 'border border-neutral-300'
+                            : 'border border-black/10'
+                        }`}
+                        style={{ backgroundColor: preset.hex }}
+                      />
+                      {preset.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Agregar color personalizado */}
+            <div className="pt-2 border-t border-copas-plata/50 flex flex-wrap items-center gap-2">
+              <input
+                type="color"
+                value={customColorHex}
+                onChange={(e) => setCustomColorHex(e.target.value)}
+                title="Elegir tono de color"
+                className="w-9 h-9 rounded-lg border border-copas-plata cursor-pointer p-0.5 bg-white"
+              />
+              <input
+                type="text"
+                value={customColorName}
+                onChange={(e) => setCustomColorName(e.target.value)}
+                placeholder="Otro color (ej: Beige PCB, Verde flúor...)"
+                className="flex-1 min-w-[160px] border border-copas-plata rounded-lg px-3 py-1.5 text-xs text-copas-marino focus:outline-none focus:border-copas-azul"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const trimmed = customColorName.trim()
+                  if (!trimmed) {
+                    toast.error('Escribí el nombre del color.')
+                    return
+                  }
+                  if (
+                    selectedColors.some(
+                      (c) => c.name.toLowerCase() === trimmed.toLowerCase()
+                    )
+                  ) {
+                    toast.error('Ese color ya está agregado.')
+                    return
+                  }
+                  setSelectedColors((prev) => [
+                    ...prev,
+                    { name: trimmed, hex: customColorHex },
+                  ])
+                  setCustomColorName('')
+                }}
+              >
+                + Agregar color
+              </Button>
+            </div>
           </div>
+
+          <Input
+            label="Tiempo de entrega estimado"
+            value={estimatedDelivery}
+            onChange={(e) => setEstimatedDelivery(e.target.value)}
+          />
 
           {/* Etiquetas */}
           <div>

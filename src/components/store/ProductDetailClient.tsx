@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ShoppingCart, MessageCircle, ArrowLeft, Clock, Truck, ShieldCheck } from 'lucide-react'
 import { Product, ProductVariant, Category } from '@/types'
 import { formatPrice } from '@/lib/utils'
+import { parseColorOption, isLightHex } from '@/lib/colors'
 import { useCart } from '@/context/CartContext'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
@@ -19,7 +20,7 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
   const { addItem } = useCart()
   const photos = product.photos || []
   const variants = product.variants || []
-  const colors = product.colors || []
+  const colorOptions = (product.colors || []).map(parseColorOption)
 
   const [selectedPhoto, setSelectedPhoto] = useState(
     product.main_photo_index < photos.length ? product.main_photo_index : 0
@@ -27,7 +28,7 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     variants.length >= 1 ? variants[0] : null
   )
-  const [selectedColor, setSelectedColor] = useState(colors[0] || '')
+  const [selectedColor, setSelectedColor] = useState(colorOptions[0]?.name || '')
   const [personalization, setPersonalization] = useState('')
   const [qty, setQty] = useState(1)
   const [error, setError] = useState('')
@@ -144,9 +145,14 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
           </div>
 
           {product.description && (
-            <p className="text-neutral-600 leading-relaxed text-sm sm:text-base">
-              {product.description}
-            </p>
+            <div className="bg-neutral-50/80 border border-neutral-200/70 rounded-2xl p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                Descripción
+              </p>
+              <p className="text-neutral-700 leading-relaxed text-sm sm:text-base whitespace-pre-line">
+                {product.description}
+              </p>
+            </div>
           )}
 
           {/* Selector de tamaño */}
@@ -175,26 +181,39 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
           )}
 
           {/* Selector de color */}
-          {colors.length > 0 && (
+          {colorOptions.length > 0 && (
             <div>
               <p className="font-semibold text-[#0F172A] mb-2.5 text-xs uppercase tracking-wider">
-                Color: <span className="text-[#0D52D6] font-normal normal-case">{selectedColor}</span>
+                Color:{' '}
+                <span className="text-[#0D52D6] font-semibold normal-case">
+                  {selectedColor}
+                </span>
               </p>
               <div className="flex flex-wrap gap-2">
-                {colors.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setSelectedColor(color)}
-                    className={`px-4 py-1.5 rounded-full border text-xs font-medium transition-all ${
-                      selectedColor === color
-                        ? 'border-[#0D52D6] bg-[#0D52D6] text-white shadow-sm'
-                        : 'border-neutral-300 bg-white text-neutral-700 hover:border-[#0D52D6] hover:text-[#0D52D6]'
-                    }`}
-                  >
-                    {color}
-                  </button>
-                ))}
+                {colorOptions.map((c) => {
+                  const active = selectedColor === c.name
+                  const light = isLightHex(c.hex)
+                  return (
+                    <button
+                      key={c.name}
+                      type="button"
+                      onClick={() => setSelectedColor(c.name)}
+                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full border text-xs font-semibold transition-all ${
+                        active
+                          ? 'border-[#0D52D6] bg-blue-50/70 text-[#0F172A] ring-2 ring-[#0D52D6]/20 shadow-sm'
+                          : 'border-neutral-300 bg-white text-neutral-700 hover:border-[#0D52D6] hover:text-[#0F172A]'
+                      }`}
+                    >
+                      <span
+                        className={`w-4 h-4 rounded-full shrink-0 ${
+                          light ? 'border border-neutral-300' : 'border border-black/10'
+                        }`}
+                        style={{ backgroundColor: c.hex }}
+                      />
+                      <span>{c.name}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}

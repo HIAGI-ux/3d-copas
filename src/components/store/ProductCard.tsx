@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Product } from '@/types'
 import { formatPrice } from '@/lib/utils'
+import { parseColorOption, isLightHex } from '@/lib/colors'
 import { PLACEHOLDER_IMAGE } from '@/lib/constants'
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -14,7 +15,7 @@ export default function ProductCard({ product }: { product: Product }) {
       ? product.photos.find((_, idx) => idx !== mainIdx) || null
       : null
   const isUnavailable = product.status === 'agotado'
-  const colorCount = product.colors?.length || 0
+  const colorOptions = (product.colors || []).map(parseColorOption)
 
   return (
     <Link
@@ -89,10 +90,23 @@ export default function ProductCard({ product }: { product: Product }) {
           ) : (
             <span />
           )}
-          {colorCount > 1 && (
-            <span className="text-[11px] text-neutral-400 shrink-0">
-              {colorCount} colores
-            </span>
+          {colorOptions.length > 0 && (
+            <div className="flex items-center gap-1 shrink-0" title={colorOptions.map((c) => c.name).join(', ')}>
+              {colorOptions.slice(0, 5).map((c) => (
+                <span
+                  key={c.name}
+                  className={`w-3 h-3 rounded-full ${
+                    isLightHex(c.hex) ? 'border border-neutral-300' : 'border border-black/10'
+                  }`}
+                  style={{ backgroundColor: c.hex }}
+                />
+              ))}
+              {colorOptions.length > 5 && (
+                <span className="text-[10px] text-neutral-400 font-medium">
+                  +{colorOptions.length - 5}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
