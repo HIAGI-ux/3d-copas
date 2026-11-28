@@ -232,3 +232,30 @@ export interface CalculatorDefaults {
   ml_commission_pct: number
   updated_at: string
 }
+
+export interface StlFile {
+  id: string
+  name: string
+  folder: string
+  file_name: string
+  file_path: string
+  file_size_bytes: number
+  product_id?: string | null
+  material?: string | null
+  print_time_minutes?: number | null
+  filament_grams?: number | null
+  layer_height?: string | null
+  infill_pct?: number | null
+  supports: boolean
+  notes?: string | null
+  tags: string[]
+  favorite: boolean
+  created_at: string
+  updated_at: string
+  // Join opcional
+  product?: {
+    id: string
+    name: string
+    slug: string
+  } | null
+}
