@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ShoppingCart, MessageCircle, ArrowLeft } from 'lucide-react'
+import { ShoppingCart, MessageCircle, ArrowLeft, Clock, Truck, ShieldCheck } from 'lucide-react'
 import { Product, ProductVariant, Category } from '@/types'
 import { formatPrice } from '@/lib/utils'
 import { useCart } from '@/context/CartContext'
@@ -69,18 +69,18 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
     : null
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 sm:py-10">
       <Link
         href="/"
-        className="inline-flex items-center gap-1.5 text-sm font-heading font-bold text-copas-azul hover:text-copas-marino mb-5"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-[#0D52D6] mb-6 transition-colors"
       >
-        <ArrowLeft size={16} /> Volver al catálogo
+        <ArrowLeft size={15} /> Volver al catálogo
       </Link>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
         {/* Galería */}
         <div>
-          <div className="relative aspect-square rounded-card overflow-hidden bg-white border border-copas-plata mb-3 shadow-sm">
+          <div className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200/80 mb-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={currentPhoto}
@@ -89,13 +89,16 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
             />
           </div>
           {photos.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="flex gap-2.5 overflow-x-auto pb-1">
               {photos.map((photo, idx) => (
                 <button
                   key={idx}
+                  type="button"
                   onClick={() => setSelectedPhoto(idx)}
-                  className={`relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedPhoto === idx ? 'border-copas-azul' : 'border-copas-plata'
+                  className={`relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
+                    selectedPhoto === idx
+                      ? 'border-[#0D52D6] ring-2 ring-[#0D52D6]/20'
+                      : 'border-neutral-200 hover:border-neutral-300 opacity-80 hover:opacity-100'
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -106,46 +109,49 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
           )}
         </div>
 
-        {/* Info */}
-        <div className="flex flex-col gap-4">
-          {(product.category as Category | undefined)?.name && (
-            <p className="text-xs text-copas-plata-oscuro font-bold uppercase tracking-wider">
-              {(product.category as Category).name}
-            </p>
-          )}
+        {/* Info del producto */}
+        <div className="flex flex-col gap-5">
+          <div>
+            {(product.category as Category | undefined)?.name && (
+              <p className="text-xs text-[#0D52D6] font-semibold uppercase tracking-wider mb-1.5">
+                {(product.category as Category).name}
+              </p>
+            )}
 
-          <h1 className="font-heading text-2xl sm:text-3xl font-black text-copas-marino">
-            {product.name}
-          </h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight leading-tight">
+              {product.name}
+            </h1>
 
-          {product.labels && product.labels.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {product.labels.map((label) => (
-                <Badge key={label} label={label} />
-              ))}
+            {product.labels && product.labels.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {product.labels.map((label) => (
+                  <Badge key={label} label={label} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Precio destacado */}
+          <div className="border-y border-neutral-200 py-4">
+            <div className="text-3xl font-bold text-[#0F172A] tracking-tight">
+              {formatPrice(price)}
             </div>
-          )}
+            <p className="text-xs text-neutral-500 mt-1">
+              Transferencia bancaria o efectivo al retirar
+            </p>
+          </div>
 
           {product.description && (
-            <p className="text-copas-marino/80 leading-relaxed text-sm sm:text-base">
+            <p className="text-neutral-600 leading-relaxed text-sm sm:text-base">
               {product.description}
             </p>
           )}
 
-          {/* Tiempo de entrega */}
-          <div className="flex items-center gap-2 text-sm text-copas-marino bg-white border border-copas-plata/70 rounded-lg px-3.5 py-2.5">
-            <span>⏱️</span>
-            <span>
-              Tiempo de entrega estimado:{' '}
-              <strong className="text-copas-azul">{product.estimated_delivery}</strong>
-            </span>
-          </div>
-
           {/* Selector de tamaño */}
           {variants.length > 0 && (
             <div>
-              <p className="font-heading font-bold text-copas-marino mb-2 text-sm">
-                Tamaño y precio:
+              <p className="font-semibold text-[#0F172A] mb-2.5 text-xs uppercase tracking-wider">
+                Tamaño
               </p>
               <div className="flex flex-wrap gap-2">
                 {variants.map((v) => (
@@ -153,13 +159,13 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
                     key={v.id}
                     type="button"
                     onClick={() => setSelectedVariant(v)}
-                    className={`px-4 py-2 rounded-lg border-2 font-heading font-semibold text-sm transition-all ${
+                    className={`px-4 py-2 rounded-full border text-xs font-semibold transition-all ${
                       selectedVariant?.id === v.id
-                        ? 'border-copas-azul bg-copas-azul text-white'
-                        : 'border-copas-plata bg-white text-copas-marino hover:border-copas-azul'
+                        ? 'border-[#0D52D6] bg-[#0D52D6] text-white shadow-sm'
+                        : 'border-neutral-300 bg-white text-neutral-700 hover:border-[#0D52D6] hover:text-[#0D52D6]'
                     }`}
                   >
-                    {v.size} — {formatPrice(v.price)}
+                    {v.size} · {formatPrice(v.price)}
                   </button>
                 ))}
               </div>
@@ -169,17 +175,19 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
           {/* Selector de color */}
           {colors.length > 0 && (
             <div>
-              <p className="font-heading font-bold text-copas-marino mb-2 text-sm">Color:</p>
+              <p className="font-semibold text-[#0F172A] mb-2.5 text-xs uppercase tracking-wider">
+                Color: <span className="text-[#0D52D6] font-normal normal-case">{selectedColor}</span>
+              </p>
               <div className="flex flex-wrap gap-2">
                 {colors.map((color) => (
                   <button
                     key={color}
                     type="button"
                     onClick={() => setSelectedColor(color)}
-                    className={`px-3 py-1.5 rounded-lg border-2 font-heading text-sm transition-all ${
+                    className={`px-4 py-1.5 rounded-full border text-xs font-medium transition-all ${
                       selectedColor === color
-                        ? 'border-copas-azul bg-copas-azul text-white'
-                        : 'border-copas-plata bg-white text-copas-marino hover:border-copas-azul'
+                        ? 'border-[#0D52D6] bg-[#0D52D6] text-white shadow-sm'
+                        : 'border-neutral-300 bg-white text-neutral-700 hover:border-[#0D52D6] hover:text-[#0D52D6]'
                     }`}
                   >
                     {color}
@@ -192,69 +200,65 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
           {/* Personalización */}
           {product.personalizable && (
             <div>
-              <label className="font-heading font-bold text-copas-marino block mb-1.5 text-sm">
-                🎨 ¿Qué querés que diga o cómo querés personalizarlo? *
+              <label className="font-semibold text-[#0F172A] block mb-1.5 text-xs uppercase tracking-wider">
+                Personalización *
               </label>
               {product.personalization_hint && (
-                <p className="text-xs text-copas-plata-oscuro mb-2">
+                <p className="text-xs text-neutral-500 mb-2">
                   {product.personalization_hint}
                 </p>
               )}
               <textarea
                 value={personalization}
                 onChange={(e) => setPersonalization(e.target.value)}
-                placeholder="Escribí el nombre, texto o diseño que querés..."
+                placeholder="Escribí el nombre, texto o detalle que querés..."
                 rows={3}
-                className="w-full border-2 border-copas-plata bg-white rounded-lg p-3 text-copas-marino focus:outline-none focus:border-copas-azul resize-none"
+                className="w-full border border-neutral-300 bg-white rounded-xl p-3 text-sm text-[#0F172A] focus:outline-none focus:border-[#0D52D6] resize-none"
               />
             </div>
           )}
 
-          {/* Precio */}
-          <div className="text-3xl font-heading font-black text-copas-azul">
-            {formatPrice(price)}
-          </div>
-
-          {error && <p className="text-copas-rojo font-semibold text-sm">{error}</p>}
+          {error && <p className="text-red-600 font-medium text-sm">{error}</p>}
 
           {product.status === 'agotado' ? (
-            <div className="bg-copas-rojo/10 border border-copas-rojo rounded-lg p-3 text-sm text-copas-rojo font-semibold">
-              Este producto está temporalmente agotado. Podés consultarme por WhatsApp cuándo vuelve.
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 text-sm text-red-700 font-medium">
+              Este producto está temporalmente agotado. Consultanos por WhatsApp cuándo vuelve a ingresar.
             </div>
           ) : (
-            <div className="flex gap-3 items-center">
-              <div className="flex items-center border-2 border-copas-plata bg-white rounded-lg overflow-hidden">
+            <div className="flex gap-3 items-center pt-1">
+              <div className="flex items-center border border-neutral-300 bg-white rounded-full overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  className="px-3.5 py-2.5 hover:bg-copas-crema transition-colors font-bold text-copas-marino"
+                  className="px-3.5 py-2.5 hover:bg-neutral-100 transition-colors font-semibold text-[#0F172A]"
                 >
                   −
                 </button>
-                <span className="px-4 py-2.5 font-heading font-bold text-copas-marino min-w-[3rem] text-center">
+                <span className="px-3 py-2.5 font-semibold text-sm text-[#0F172A] min-w-[2.5rem] text-center">
                   {qty}
                 </span>
                 <button
                   type="button"
                   onClick={() => setQty((q) => q + 1)}
-                  className="px-3.5 py-2.5 hover:bg-copas-crema transition-colors font-bold text-copas-marino"
+                  className="px-3.5 py-2.5 hover:bg-neutral-100 transition-colors font-semibold text-[#0F172A]"
                 >
                   +
                 </button>
               </div>
-              <Button onClick={handleAddToCart} size="lg" className="flex-1">
+              <Button onClick={handleAddToCart} size="lg" className="flex-1 text-sm py-3">
                 <ShoppingCart size={18} />
                 Agregar al carrito
               </Button>
             </div>
           )}
 
-          <div className="flex gap-2.5 flex-wrap pt-1">
+          {/* Acciones secundarias */}
+          <div className="flex gap-2.5 flex-wrap">
             <Link
               href="/?modal=personalizado"
-              className="flex items-center gap-2 border-2 border-copas-marino text-copas-marino px-4 py-2 rounded-lg font-heading font-bold text-sm hover:bg-copas-marino hover:text-white transition-all"
+              className="inline-flex items-center gap-2 border border-neutral-300 text-[#0F172A] px-5 py-2.5 rounded-full font-semibold text-xs hover:border-[#0D52D6] hover:text-[#0D52D6] transition-colors"
             >
-              <MessageCircle size={16} />
+              <MessageCircle size={15} />
               Pedir algo personalizado
             </Link>
             {whatsappPersonal && (
@@ -262,11 +266,29 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
                 href={whatsappPersonal}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 border-2 border-copas-verde text-copas-verde px-4 py-2 rounded-lg font-heading font-bold text-sm hover:bg-copas-verde hover:text-white transition-all"
+                className="inline-flex items-center gap-2 border border-green-600 text-green-700 px-5 py-2.5 rounded-full font-semibold text-xs hover:bg-green-600 hover:text-white transition-colors"
               >
-                💬 Escribime por WhatsApp
+                Consultar por WhatsApp
               </a>
             )}
+          </div>
+
+          {/* Beneficios / confianza */}
+          <div className="bg-neutral-50 border border-neutral-200/80 rounded-2xl p-4 space-y-2.5 text-xs text-neutral-600">
+            <div className="flex items-center gap-2.5">
+              <Clock size={15} className="text-[#0D52D6] shrink-0" />
+              <span>
+                Producción estimada: <strong className="text-[#0F172A]">{product.estimated_delivery}</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <Truck size={15} className="text-[#0D52D6] shrink-0" />
+              <span>Envíos a todo el país o retiro sin cargo en Balcarce.</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <ShieldCheck size={15} className="text-[#0D52D6] shrink-0" />
+              <span>Garantía por defectos de impresión o roturas en el envío.</span>
+            </div>
           </div>
         </div>
       </div>

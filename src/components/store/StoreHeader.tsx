@@ -39,7 +39,7 @@ export default function StoreHeader({ config }: StoreHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-neutral-200">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200/80">
       {/* Barra de anuncios superior con el azul del logo */}
       <div className="bg-[#0D52D6] text-white text-[11px] sm:text-xs py-2 px-4 text-center font-medium tracking-wide">
         <span>Envíos a todo el país</span>

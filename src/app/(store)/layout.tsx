@@ -3,6 +3,7 @@ import StoreHeader from '@/components/store/StoreHeader'
 import StoreFooter from '@/components/store/StoreFooter'
 import { createClient } from '@/lib/supabase/server'
 import { BusinessConfig } from '@/types'
+import { MessageCircle } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,11 @@ export default async function StoreLayout({ children }: { children: React.ReactN
     .single()
 
   const businessConfig = config as BusinessConfig | null
+  const whatsappUrl = businessConfig?.whatsapp
+    ? `https://wa.me/${businessConfig.whatsapp}?text=${encodeURIComponent(
+        'Hola, vi la tienda 3D Copas y quiero hacer una consulta.'
+      )}`
+    : null
 
   return (
     <CartProvider>
@@ -23,6 +29,19 @@ export default async function StoreLayout({ children }: { children: React.ReactN
         <StoreHeader config={businessConfig} />
         <main className="flex-1">{children}</main>
         <StoreFooter config={businessConfig} />
+        {whatsappUrl && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Consultar por WhatsApp"
+            title="Consultar por WhatsApp"
+            className="fixed bottom-5 right-5 z-40 flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all text-xs font-semibold"
+          >
+            <MessageCircle size={18} />
+            <span className="hidden sm:inline">WhatsApp</span>
+          </a>
+        )}
       </div>
     </CartProvider>
   )
