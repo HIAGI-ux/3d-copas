@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Product } from '@/types'
 import ProductDetailClient from '@/components/store/ProductDetailClient'
+import { ProductSchema } from '@/components/store/JsonLdSchema'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,9 +49,18 @@ export default async function ProductPage({ params }: { params: { slug: string }
     .eq('id', productRes.data.id)
 
   return (
-    <ProductDetailClient
-      product={productRes.data as unknown as Product}
-      whatsapp={configRes.data?.whatsapp}
-    />
+    <>
+      <ProductSchema
+        name={productRes.data.name}
+        description={productRes.data.description}
+        imageUrl={productRes.data.photos?.[productRes.data.main_photo_index] || productRes.data.photos?.[0]}
+        price={productRes.data.variants?.[0]?.price}
+        slug={params.slug}
+      />
+      <ProductDetailClient
+        product={productRes.data as unknown as Product}
+        whatsapp={configRes.data?.whatsapp}
+      />
+    </>
   )
 }

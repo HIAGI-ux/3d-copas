@@ -1,6 +1,8 @@
 import { CartProvider } from '@/context/CartContext'
 import StoreHeader from '@/components/store/StoreHeader'
 import StoreFooter from '@/components/store/StoreFooter'
+import CookieBanner from '@/components/store/CookieBanner'
+import { LocalBusinessSchema } from '@/components/store/JsonLdSchema'
 import { createClient } from '@/lib/supabase/server'
 import { BusinessConfig } from '@/types'
 import { MessageCircle } from 'lucide-react'
@@ -25,6 +27,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
 
   return (
     <CartProvider>
+      <LocalBusinessSchema />
       <div className="min-h-screen flex flex-col bg-white text-neutral-900">
         <StoreHeader config={businessConfig} />
         <main className="flex-1">{children}</main>
@@ -42,6 +45,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
             <span className="hidden sm:inline">WhatsApp</span>
           </a>
         )}
+        <CookieBanner />
       </div>
     </CartProvider>
   )

@@ -86,6 +86,8 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
               src={currentPhoto}
               alt={product.name}
               className="w-full h-full object-cover"
+              loading="eager"
+              fetchPriority="high"
             />
           </div>
           {photos.length > 1 && (
@@ -102,7 +104,7 @@ export default function ProductDetailClient({ product, whatsapp }: Props) {
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photo} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                  <img src={photo} alt={`${product.name} – foto ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
                 </button>
               ))}
             </div>

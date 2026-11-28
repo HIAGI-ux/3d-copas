@@ -137,11 +137,22 @@ export default function StoreFooter({ config }: { config: BusinessConfig | null 
           </div>
         </div>
 
-        <div className="border-t border-neutral-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-neutral-500">
+        <div className="border-t border-neutral-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-500">
           <span>
             © {new Date().getFullYear()} {config?.name || '3D Copas'}. Todos los derechos reservados.
           </span>
-          <span>Balcarce, Buenos Aires, Argentina</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/legal/aviso-legal" className="hover:text-neutral-300 transition-colors">
+              Aviso legal
+            </Link>
+            <Link href="/legal/politica-privacidad" className="hover:text-neutral-300 transition-colors">
+              Privacidad
+            </Link>
+            <Link href="/legal/politica-cookies" className="hover:text-neutral-300 transition-colors">
+              Cookies
+            </Link>
+            <span className="text-neutral-700">Balcarce, Buenos Aires, Argentina</span>
+          </div>
         </div>
       </div>
     </footer>

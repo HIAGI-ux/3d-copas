@@ -19,6 +19,8 @@ export default function ModalPersonalizado({ whatsapp }: Props) {
   const [open, setOpen] = useState(true)
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [honeypot, setHoneypot] = useState('')
+  const [lastSubmitTime, setLastSubmitTime] = useState(0)
   const [form, setForm] = useState({
     customerName: '',
     contactType: 'whatsapp' as 'whatsapp' | 'email',
@@ -35,6 +37,14 @@ export default function ModalPersonalizado({ whatsapp }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    // Honeypot: si el campo trampa tiene contenido, es un bot
+    if (honeypot) return
+    // Rate limiting: esperar 60s entre envíos
+    const now = Date.now()
+    if (now - lastSubmitTime < 60_000) {
+      toast.error('Esperá un momento antes de enviar otra consulta.')
+      return
+    }
     const cleanName = sanitizeText(form.customerName, 120)
     const cleanContact =
       form.contactType === 'email'
@@ -92,6 +102,7 @@ export default function ModalPersonalizado({ whatsapp }: Props) {
       return
     }
 
+    setLastSubmitTime(Date.now())
     setSubmitted(true)
   }
 
@@ -113,6 +124,16 @@ export default function ModalPersonalizado({ whatsapp }: Props) {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* Honeypot anti-spam: oculto para humanos, visible para bots */}
+          <input
+            type="text"
+            name="website"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            tabIndex={-1}
+            aria-hidden="true"
+            style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0 }}
+          />
           <p className="text-sm text-copas-plata-oscuro">
             Contame qué querés imprimir en 3D y te paso presupuesto. Si preferís, también podés
             escribirme directo por WhatsApp.
