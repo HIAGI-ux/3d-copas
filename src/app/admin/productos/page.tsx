@@ -13,7 +13,7 @@ import Modal from '@/components/ui/Modal'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import PriceCalculator from '@/components/admin/PriceCalculator'
 import toast from 'react-hot-toast'
-import { Plus, Edit2, Copy, Trash2, Calculator, Star, Eye, EyeOff, X } from 'lucide-react'
+import { Plus, Edit2, Copy, Trash2, Calculator, Star, Eye, EyeOff, X, Pin } from 'lucide-react'
 
 const AVAILABLE_LABELS = ['Nuevo', 'Navidad', 'Más pedido', 'A pedido', 'Agotado']
 
@@ -44,6 +44,8 @@ export default function AdminProductosPage() {
   const [status, setStatus] = useState<ProductStatus>('disponible')
   const [visible, setVisible] = useState(true)
   const [featured, setFeatured] = useState(false)
+  const [pinned, setPinned] = useState(false)
+  const [pinnedUntil, setPinnedUntil] = useState('')
   const [season, setSeason] = useState('')
   const [estimatedDelivery, setEstimatedDelivery] = useState('5 a 7 días hábiles')
   const [personalizable, setPersonalizable] = useState(false)
@@ -89,6 +91,8 @@ export default function AdminProductosPage() {
     setStatus('disponible')
     setVisible(true)
     setFeatured(false)
+    setPinned(false)
+    setPinnedUntil('')
     setSeason('')
     setEstimatedDelivery('5 a 7 días hábiles')
     setPersonalizable(false)
@@ -124,6 +128,8 @@ export default function AdminProductosPage() {
     setStatus(p.status)
     setVisible(p.visible)
     setFeatured(p.featured)
+    setPinned(p.pinned || false)
+    setPinnedUntil(p.pinned_until || '')
     setSeason(p.season || '')
     setEstimatedDelivery(p.estimated_delivery || '5 a 7 días hábiles')
     setPersonalizable(p.personalizable)
@@ -238,6 +244,8 @@ export default function AdminProductosPage() {
       status,
       visible,
       featured,
+      pinned,
+      pinned_until: pinnedUntil || null,
       season: season.trim() || null,
       estimated_delivery: estimatedDelivery.trim() || '5 a 7 días hábiles',
       personalizable,
@@ -327,6 +335,7 @@ export default function AdminProductosPage() {
                     {p.name}
                   </p>
                   {p.featured && <Star size={14} className="text-copas-dorado fill-copas-dorado shrink-0" />}
+                  {p.pinned && <Pin size={14} className="text-purple-500 shrink-0" />}
                 </div>
                 <p className="text-xs text-copas-plata-oscuro">
                   {(p.category as Category | undefined)?.name || 'Sin categoría'} ·{' '}
@@ -603,7 +612,26 @@ export default function AdminProductosPage() {
               />
               Personalizable
             </label>
+            <label className="flex items-center gap-2 text-sm font-semibold text-copas-marino cursor-pointer">
+              <input
+                type="checkbox"
+                checked={pinned}
+                onChange={(e) => setPinned(e.target.checked)}
+                className="w-4 h-4 accent-purple-600"
+              />
+              📌 Anclar al tope de la tienda
+            </label>
           </div>
+
+          {pinned && (
+            <Input
+              label="Anclar hasta (fecha, opcional)"
+              type="date"
+              value={pinnedUntil}
+              onChange={(e) => setPinnedUntil(e.target.value)}
+              hint="Dejalo vacío para anclar sin fecha límite."
+            />
+          )}
 
           {personalizable && (
             <Input

@@ -17,6 +17,7 @@ import {
   X,
   LogOut,
   ExternalLink,
+  Tag,
 } from 'lucide-react'
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
@@ -52,6 +53,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       badge: newRequestsCount > 0 ? newRequestsCount : undefined,
     },
     { href: '/admin/productos', label: 'Productos', icon: Package },
+    { href: '/admin/categorias', label: 'Categorías', icon: Tag },
     { href: '/admin/orden', label: 'Orden y destacados', icon: ArrowUpDown },
     { href: '/admin/calculadora', label: 'Calculadora', icon: Calculator },
     { href: '/admin/contabilidad', label: 'Contabilidad', icon: Wallet },

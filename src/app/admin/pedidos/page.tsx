@@ -35,6 +35,7 @@ export default function AdminPedidosPage() {
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [saving, setSaving] = useState(false)
+  const [receiptType, setReceiptType] = useState<'X' | 'E'>('X')
 
   // Campos editables del pedido
   const [editStatus, setEditStatus] = useState<OrderStatus>('nuevo')
@@ -84,6 +85,7 @@ export default function AdminPedidosPage() {
     setEditDispatchDate(order.dispatch_date || '')
     setEditNotes(order.notes || '')
     setShippingCost(Number(order.shipping_cost || 0))
+    setReceiptType(order.receipt_type || 'X')
 
     // Calcular caja estimada desde los items
     const items = order.items || []
@@ -194,6 +196,7 @@ export default function AdminPedidosPage() {
       .update({
         receipt_number: nextReceiptNum,
         receipt_issued_at: selectedOrder.receipt_issued_at || nowIso,
+        receipt_type: receiptType,
       })
       .eq('id', selectedOrder.id)
 
@@ -209,7 +212,7 @@ export default function AdminPedidosPage() {
       receipt_number: nextReceiptNum,
       receipt_issued_at: selectedOrder.receipt_issued_at || nowIso,
     }
-    generateOrderReceiptPDF(updatedOrder, config)
+    generateOrderReceiptPDF(updatedOrder, config, undefined, receiptType)
     toast.success('Comprobante descargado.')
     loadData()
   }
@@ -598,8 +601,27 @@ export default function AdminPedidosPage() {
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2 border-t border-copas-plata">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <label className="text-sm font-medium text-copas-marino shrink-0">Tipo comprobante:</label>
+                <div className="flex rounded-full border-2 border-copas-plata overflow-hidden">
+                  {(['X', 'E'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setReceiptType(t)}
+                      className={`px-4 py-1.5 text-sm font-bold transition-colors ${
+                        receiptType === t
+                          ? 'bg-copas-azul text-white'
+                          : 'bg-white text-copas-marino hover:bg-copas-crema'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Button type="button" variant="outline" onClick={handleGenerateReceipt}>
-                <FileText size={16} /> Generar comprobante PDF
+                <FileText size={16} /> Generar comprobante {receiptType}
               </Button>
               <Button type="button" loading={saving} onClick={handleSaveOrder} className="flex-1">
                 Guardar cambios del pedido

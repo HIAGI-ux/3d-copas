@@ -5,6 +5,7 @@ import { useCart } from '@/context/CartContext'
 import { createClient } from '@/lib/supabase/client'
 import { BusinessConfig, ARGENTINA_PROVINCES, DeliveryType } from '@/types'
 import { formatPrice, isLocalDelivery } from '@/lib/utils'
+import { sanitizeText, sanitizePhone, sanitizeEmail, isValidEmail } from '@/lib/security'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -82,8 +83,18 @@ export default function CheckoutModal({ onClose }: CheckoutModalProps) {
 
   const handleDatosSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fullName.trim() || !phone.trim() || !province || !city.trim() || !postalCode.trim()) {
+    const cleanName = sanitizeText(fullName, 120)
+    const cleanPhone = sanitizePhone(phone)
+    const cleanEmail = sanitizeEmail(email)
+    const cleanCity = sanitizeText(city, 100)
+    const cleanPostal = sanitizeText(postalCode, 15)
+
+    if (!cleanName || !cleanPhone || !province || !cleanCity || !cleanPostal) {
       toast.error('Completá todos los campos obligatorios.')
+      return
+    }
+    if (cleanEmail && !isValidEmail(cleanEmail)) {
+      toast.error('El email ingresado no es válido.')
       return
     }
     if (!config) {
@@ -91,7 +102,13 @@ export default function CheckoutModal({ onClose }: CheckoutModalProps) {
       return
     }
 
-    const local = isLocalDelivery(province, city, postalCode, {
+    setFullName(cleanName)
+    setPhone(cleanPhone)
+    setEmail(cleanEmail)
+    setCity(cleanCity)
+    setPostalCode(cleanPostal)
+
+    const local = isLocalDelivery(province, cleanCity, cleanPostal, {
       province: config.local_province,
       city: config.local_city,
       postalCodes: config.local_postal_codes || ['7620'],

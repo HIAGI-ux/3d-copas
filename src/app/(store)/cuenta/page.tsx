@@ -10,6 +10,7 @@ import {
 } from '@/types'
 import { formatDate, formatPrice } from '@/lib/utils'
 import { generateOrderReceiptPDF } from '@/lib/pdf-receipt'
+import { sanitizeText, sanitizePhone, sanitizeEmail, isValidEmail } from '@/lib/security'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
@@ -75,8 +76,13 @@ export default function CuentaPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    const cleanEmail = sanitizeEmail(email)
+    if (!isValidEmail(cleanEmail)) {
+      toast.error('Ingresá un email válido.')
+      return
+    }
     setSubmitting(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
     setSubmitting(false)
     if (error) {
       toast.error('Email o contraseña incorrectos.')
@@ -88,15 +94,22 @@ export default function CuentaPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    const cleanEmail = sanitizeEmail(email)
+    const cleanName = sanitizeText(fullName, 120)
+    const cleanPhone = sanitizePhone(phone)
+    if (!isValidEmail(cleanEmail)) {
+      toast.error('Ingresá un email válido.')
+      return
+    }
     if (password.length < 6) {
       toast.error('La contraseña debe tener al menos 6 caracteres.')
       return
     }
     setSubmitting(true)
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: cleanEmail,
       password,
-      options: { data: { full_name: fullName } },
+      options: { data: { full_name: cleanName, phone: cleanPhone } },
     })
     if (error) {
       setSubmitting(false)
@@ -106,9 +119,9 @@ export default function CuentaPage() {
     if (data.user) {
       await supabase.from('customers').upsert({
         id: data.user.id,
-        email,
-        full_name: fullName,
-        phone,
+        email: cleanEmail,
+        full_name: cleanName,
+        phone: cleanPhone,
       })
     }
     setSubmitting(false)

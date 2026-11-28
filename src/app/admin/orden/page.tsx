@@ -25,7 +25,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Star, Eye } from 'lucide-react'
+import { GripVertical, Star, Eye, Pin } from 'lucide-react'
 
 function SortableItem({
   product,
@@ -63,7 +63,14 @@ function SortableItem({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={photo} alt={product.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="font-heading font-bold text-sm text-copas-marino truncate">{product.name}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="font-heading font-bold text-sm text-copas-marino truncate">{product.name}</p>
+          {product.pinned && (
+            <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+              <Pin size={10} /> Anclado
+            </span>
+          )}
+        </div>
         <p className="text-xs text-copas-plata-oscuro">
           {product.season ? `Temporada: ${product.season} · ` : ''}
           {formatPrice(product.variants?.[0]?.price || 0)}

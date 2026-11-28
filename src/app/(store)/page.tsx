@@ -27,9 +27,10 @@ export default async function HomePage({
     supabase
       .from('products')
       .select(
-        'id,name,slug,description,category_id,photos,main_photo_index,variants,colors,labels,status,visible,featured,sort_order,season,estimated_delivery,personalizable,personalization_hint,shipping_height_cm,shipping_width_cm,shipping_length_cm,shipping_weight_g,view_count,created_at,updated_at,category:categories(id,name,slug,icon)'
+        'id,name,slug,description,category_id,photos,main_photo_index,variants,colors,labels,status,visible,featured,pinned,pinned_until,sort_order,season,estimated_delivery,personalizable,personalization_hint,shipping_height_cm,shipping_width_cm,shipping_length_cm,shipping_weight_g,view_count,created_at,updated_at,category:categories(id,name,slug,icon)'
       )
       .eq('visible', true)
+      .order('pinned', { ascending: false })
       .order('sort_order'),
   ])
 
@@ -43,7 +44,18 @@ export default async function HomePage({
 
   const config = configRes.data as BusinessConfig
   const categories = (categoriesRes.data || []) as Category[]
-  const products = (productsRes.data || []) as unknown as Product[]
+  const rawProducts = (productsRes.data || []) as unknown as Product[]
+
+  const today = new Date().toISOString().slice(0, 10)
+  const isActivelyPinned = (p: Product) =>
+    Boolean(p.pinned && (!p.pinned_until || p.pinned_until >= today))
+
+  const products = [...rawProducts].sort((a, b) => {
+    const aPinned = isActivelyPinned(a) ? 1 : 0
+    const bPinned = isActivelyPinned(b) ? 1 : 0
+    if (aPinned !== bPinned) return bPinned - aPinned
+    return a.sort_order - b.sort_order
+  })
 
   const featured = products
     .filter((p) => p.featured)

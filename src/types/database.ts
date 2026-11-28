@@ -100,6 +100,8 @@ export interface Product {
   status: ProductStatus
   visible: boolean
   featured: boolean
+  pinned?: boolean
+  pinned_until?: string | null
   sort_order: number
   season?: string
   estimated_delivery: string
@@ -174,6 +176,7 @@ export interface Order {
   dispatch_date?: string
   receipt_number?: number
   receipt_issued_at?: string
+  receipt_type?: 'X' | 'E'
   created_at: string
   updated_at: string
   // Join

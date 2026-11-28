@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { createClient } from '@/lib/supabase/client'
 import { compressImageFile } from '@/lib/image-compress'
+import { sanitizeText, sanitizePhone, sanitizeEmail, isValidEmail } from '@/lib/security'
 import toast from 'react-hot-toast'
 
 interface Props {
@@ -34,8 +35,20 @@ export default function ModalPersonalizado({ whatsapp }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.customerName.trim() || !form.contactValue.trim() || !form.description.trim()) {
+    const cleanName = sanitizeText(form.customerName, 120)
+    const cleanContact =
+      form.contactType === 'email'
+        ? sanitizeEmail(form.contactValue)
+        : sanitizePhone(form.contactValue)
+    const cleanDesc = sanitizeText(form.description, 1500)
+    const cleanSize = sanitizeText(form.approximateSize, 100)
+
+    if (!cleanName || !cleanContact || !cleanDesc) {
       toast.error('Por favor completá los campos obligatorios.')
+      return
+    }
+    if (form.contactType === 'email' && !isValidEmail(cleanContact)) {
+      toast.error('El email ingresado no es válido.')
       return
     }
 
@@ -64,11 +77,11 @@ export default function ModalPersonalizado({ whatsapp }: Props) {
     }
 
     const { error } = await supabase.from('custom_requests').insert({
-      customer_name: form.customerName.trim(),
+      customer_name: cleanName,
       contact_type: form.contactType,
-      contact_value: form.contactValue.trim(),
-      description: form.description.trim(),
-      approximate_size: form.approximateSize.trim() || null,
+      contact_value: cleanContact,
+      description: cleanDesc,
+      approximate_size: cleanSize || null,
       reference_photo_url: referencePhotoUrl,
     })
 

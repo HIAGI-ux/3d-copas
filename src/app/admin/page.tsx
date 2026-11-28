@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Order, Product } from '@/types'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import {
@@ -22,10 +22,18 @@ export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [topProducts, setTopProducts] = useState<Product[]>([])
   const [pendingRequests, setPendingRequests] = useState(0)
+  const [reorderReminders, setReorderReminders] = useState<
+    { name: string; email: string; phone: string; last_order: string; order_number: number }[]
+  >([])
 
   useEffect(() => {
     const load = async () => {
-      const [ordersRes, prodRes, reqRes] = await Promise.all([
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      const sixtyDaysAgo = new Date()
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
+
+      const [ordersRes, prodRes, reqRes, reminderRes] = await Promise.all([
         supabase
           .from('orders')
           .select('id,total,subtotal,status,ordered_at')
@@ -39,14 +47,48 @@ export default function AdminDashboardPage() {
           .from('custom_requests')
           .select('id', { count: 'exact', head: true })
           .eq('status', 'nueva'),
+        supabase
+          .from('orders')
+          .select('ordered_at,order_number,guest_name,guest_phone,guest_email,customer:customers(full_name,email,phone)')
+          .eq('status', 'entregado')
+          .gte('ordered_at', sixtyDaysAgo.toISOString())
+          .lte('ordered_at', thirtyDaysAgo.toISOString())
+          .order('ordered_at', { ascending: false }),
       ])
+
       if (ordersRes.data) setOrders(ordersRes.data as Order[])
       if (prodRes.data) setTopProducts(prodRes.data as Product[])
       setPendingRequests(reqRes.count || 0)
+
+      if (reminderRes.data) {
+        // Deduplicar por cliente (email o nombre)
+        const seen = new Set<string>()
+        const reminders: typeof reorderReminders = []
+        for (const o of reminderRes.data as unknown as Array<{
+          ordered_at: string
+          order_number: number
+          guest_name?: string
+          guest_phone?: string
+          guest_email?: string
+          customer?: { full_name?: string; email?: string; phone?: string } | null
+        }>) {
+          const name = o.guest_name || o.customer?.full_name || 'Cliente'
+          const email = o.guest_email || o.customer?.email || ''
+          const phone = o.guest_phone || o.customer?.phone || ''
+          const key = email || name
+          if (!seen.has(key)) {
+            seen.add(key)
+            reminders.push({ name, email, phone, last_order: o.ordered_at, order_number: o.order_number })
+          }
+        }
+        setReorderReminders(reminders)
+      }
+
       setLoading(false)
     }
     load()
-  }, [supabase])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (loading) return <LoadingSpinner />
 
@@ -162,6 +204,67 @@ export default function AdminDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Recordatorio de recompra */}
+      {reorderReminders.length > 0 && (
+        <div className="bg-white rounded-card border border-amber-200 p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">🔔</span>
+            <h2 className="font-heading font-bold text-copas-marino">
+              Recordatorio de recompra
+            </h2>
+            <span className="ml-auto bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-0.5 rounded-full">
+              {reorderReminders.length} cliente{reorderReminders.length > 1 ? 's' : ''}
+            </span>
+          </div>
+          <p className="text-xs text-copas-plata-oscuro mb-4">
+            Estos clientes compraron hace entre 30 y 60 días y pueden estar listos para volver a pedir.
+          </p>
+          <div className="space-y-3">
+            {reorderReminders.map((r, i) => {
+              const waMsg = encodeURIComponent(
+                `¡Hola ${r.name}! Pasó un mes desde tu último pedido en 3D Copas 🎉 ¿Querés repetirlo o ver las novedades? Entrá a nuestra tienda o avisame por acá.`
+              )
+              const cleanPhone = r.phone.replace(/\D/g, '')
+              return (
+                <div
+                  key={i}
+                  className="flex flex-col sm:flex-row sm:items-center gap-2 border-b border-copas-plata/30 pb-3 last:border-none last:pb-0"
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-sm text-copas-marino">{r.name}</p>
+                    <p className="text-xs text-copas-plata-oscuro">
+                      Último pedido #{r.order_number} · {formatDate(r.last_order)}
+                      {r.email && ` · ${r.email}`}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    {cleanPhone && (
+                      <a
+                        href={`https://wa.me/${cleanPhone}?text=${waMsg}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+                      >
+                        WhatsApp
+                      </a>
+                    )}
+                    {r.email && (
+                      <a
+                        href={`mailto:${r.email}?subject=¿Querés repetir tu pedido de 3D Copas?&body=Hola ${r.name},%0A%0APasó un mes desde tu último pedido.%0A¿Querés ver las novedades o hacer otro pedido?%0A%0ASaludos,%0A3D Copas`}
+                        className="inline-flex items-center gap-1.5 bg-copas-azul hover:bg-copas-marino text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+                      >
+                        Email
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+

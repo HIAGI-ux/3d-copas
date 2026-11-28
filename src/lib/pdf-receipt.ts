@@ -10,7 +10,8 @@ import { formatDate, formatPrice } from '@/lib/utils'
 export function generateOrderReceiptPDF(
   order: Order,
   config: BusinessConfig | null,
-  customerName?: string
+  customerName?: string,
+  receiptType: 'X' | 'E' = 'X'
 ) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -37,7 +38,7 @@ export function generateOrderReceiptPDF(
   doc.setTextColor(15, 27, 61)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
-  doc.text('COMPROBANTE X', pageWidth - 39.5, 14, { align: 'center' })
+  doc.text(`COMPROBANTE ${receiptType}`, pageWidth - 39.5, 14, { align: 'center' })
   doc.setFontSize(10)
   const recNum = order.receipt_number || order.order_number
   doc.text(`N° ${String(recNum).padStart(6, '0')}`, pageWidth - 39.5, 22, { align: 'center' })
@@ -46,12 +47,11 @@ export function generateOrderReceiptPDF(
   doc.setTextColor(156, 42, 42) // Rojo vino
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
-  doc.text(
-    'Comprobante de compra - Documento no válido como factura',
-    pageWidth / 2,
-    43,
-    { align: 'center' }
-  )
+  const receiptLegend =
+    receiptType === 'E'
+      ? 'Comprobante de compra tipo E – No válido como factura'
+      : 'Comprobante de compra - Documento no válido como factura'
+  doc.text(receiptLegend, pageWidth / 2, 43, { align: 'center' })
 
   // Datos del cliente y fechas
   doc.setTextColor(15, 27, 61)
@@ -162,5 +162,5 @@ export function generateOrderReceiptPDF(
   const splitPolicy = doc.splitTextToSize(policyText, pageWidth - 28)
   doc.text(splitPolicy, 14, policyY + 11)
 
-  doc.save(`Comprobante-3DCopas-${String(recNum).padStart(6, '0')}.pdf`)
+  doc.save(`Comprobante${receiptType}-3DCopas-${String(recNum).padStart(6, '0')}.pdf`)
 }
