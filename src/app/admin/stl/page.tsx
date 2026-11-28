@@ -425,8 +425,9 @@ export default function AdminStlPage() {
 
   if (loading) {
     return (
-      <div className="py-20 flex justify-center">
-        <LoadingSpinner text="Cargando biblioteca STL..." />
+      <div className="py-20 flex flex-col items-center justify-center gap-3">
+        <LoadingSpinner />
+        <p className="text-sm text-copas-plata-oscuro">Cargando biblioteca STL...</p>
       </div>
     )
   }

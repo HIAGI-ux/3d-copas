@@ -362,8 +362,9 @@ export default function StlPreviewModal({
             </Button>
           </div>
         ) : loading ? (
-          <div className="h-80 flex flex-col items-center justify-center bg-slate-50 rounded-xl">
-            <LoadingSpinner text="Cargando modelo 3D..." />
+          <div className="h-80 flex flex-col items-center justify-center gap-3 bg-slate-50 rounded-xl">
+            <LoadingSpinner />
+            <p className="text-sm text-copas-plata-oscuro">Cargando modelo 3D...</p>
           </div>
         ) : error ? (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-6 text-center text-sm">
