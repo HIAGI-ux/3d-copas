@@ -8,24 +8,32 @@ import Input from '@/components/ui/Input'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 
+const ADMIN_EMAIL = 'admin@3dcopas.com'
+
 export default function AdminLoginPage() {
   const router = useRouter()
   const supabase = createClient()
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: ADMIN_EMAIL,
+      password,
+    })
     if (error) {
       setLoading(false)
-      toast.error('Email o contraseña incorrectos.')
+      toast.error('Clave incorrecta.')
       return
     }
 
-    if (data.user?.user_metadata?.role !== 'admin') {
+    const isAdmin =
+      data.user?.user_metadata?.role === 'admin' ||
+      data.user?.app_metadata?.role === 'admin'
+
+    if (!isAdmin) {
       await supabase.auth.signOut()
       setLoading(false)
       toast.error('Esta cuenta no tiene permisos de administrador.')
@@ -55,18 +63,11 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <Input
-            label="Email de administrador"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-          <Input
-            label="Contraseña"
+            label="Clave de acceso"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="Ingresá la clave de administrador"
             required
             autoComplete="current-password"
           />

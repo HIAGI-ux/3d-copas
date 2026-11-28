@@ -39,7 +39,8 @@ export async function updateSession(request: NextRequest) {
       }
     } else {
       // Verificar que sea admin
-      const isAdmin = user.user_metadata?.role === 'admin'
+      const isAdmin =
+        user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin'
       if (!isAdmin && !isLoginPage) {
         const url = request.nextUrl.clone()
         url.pathname = '/admin/login'
