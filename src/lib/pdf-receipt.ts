@@ -4,8 +4,8 @@ import { Order, BusinessConfig } from '@/types'
 import { formatDate, formatPrice } from '@/lib/utils'
 
 /**
- * Plantilla de Comprobante de Compra tipo "X" (Documento no válido como factura).
- * Diseñada de forma simple y modular para poder reemplazar fácilmente.
+ * Plantilla de Comprobante comercial tipo "X" o "E" (Documento no válido como factura).
+ * Diseño limpio, sobrio e imprimible estilo factura argentina estándar.
  */
 export function generateOrderReceiptPDF(
   order: Order,
@@ -15,152 +15,220 @@ export function generateOrderReceiptPDF(
 ) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
-
-  // Encabezado
-  doc.setFillColor(15, 27, 61) // #0F1B3D Azul marino 3D Copas
-  doc.rect(0, 0, pageWidth, 34, 'F')
-
-  doc.setTextColor(255, 255, 255)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(20)
-  doc.text(config?.name || '3D Copas', 14, 15)
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.text(config?.slogan || 'Hecho a pedido en impresión 3D · Balcarce, Buenos Aires', 14, 22)
-  if (config?.whatsapp) {
-    doc.text(`WhatsApp: +${config.whatsapp}`, 14, 28)
-  }
-
-  // Recuadro "X" al centro/derecha
-  doc.setFillColor(230, 180, 34) // Dorado copas
-  doc.roundedRect(pageWidth - 65, 6, 51, 22, 2, 2, 'F')
-  doc.setTextColor(15, 27, 61)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(14)
-  doc.text(`COMPROBANTE ${receiptType}`, pageWidth - 39.5, 14, { align: 'center' })
-  doc.setFontSize(10)
+  const margin = 14
+  const contentWidth = pageWidth - margin * 2
   const recNum = order.receipt_number || order.order_number
-  doc.text(`N° ${String(recNum).padStart(6, '0')}`, pageWidth - 39.5, 22, { align: 'center' })
 
-  // Leyenda legal obligatoria
-  doc.setTextColor(156, 42, 42) // Rojo vino
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10)
-  const receiptLegend =
-    receiptType === 'E'
-      ? 'Comprobante de compra tipo E – No válido como factura'
-      : 'Comprobante de compra - Documento no válido como factura'
-  doc.text(receiptLegend, pageWidth / 2, 43, { align: 'center' })
+  // Marco superior limpio (estilo comprobante argentino clásico)
+  doc.setDrawColor(203, 213, 225) // #CBD5E1
+  doc.setLineWidth(0.4)
+  doc.rect(margin, 12, contentWidth, 34)
 
-  // Datos del cliente y fechas
-  doc.setTextColor(15, 27, 61)
-  doc.setFontSize(10)
+  // Línea vertical divisoria izquierda / derecha
+  const centerX = pageWidth / 2
+  doc.line(centerX, 28, centerX, 46)
+
+  // Cuadro central con la letra X o E (estilo AFIP / comercial)
+  const boxSize = 14
+  doc.setFillColor(255, 255, 255)
+  doc.setDrawColor(15, 23, 42) // #0F172A
+  doc.setLineWidth(0.5)
+  doc.rect(centerX - boxSize / 2, 12, boxSize, boxSize, 'FD')
+
+  doc.setTextColor(15, 23, 42)
   doc.setFont('helvetica', 'bold')
-  doc.text('Datos del cliente y entrega:', 14, 53)
+  doc.setFontSize(18)
+  doc.text(receiptType, centerX, 21.5, { align: 'center' })
 
   doc.setFont('helvetica', 'normal')
-  const clientName = customerName || order.guest_name || order.customer?.full_name || 'Cliente'
-  const clientPhone = order.guest_phone || order.customer?.phone || '-'
-  doc.text(`Cliente: ${clientName}`, 14, 59)
-  doc.text(`Teléfono: ${clientPhone}`, 14, 65)
-  doc.text(`Localidad: ${order.city}, ${order.province} (CP ${order.postal_code})`, 14, 71)
-  doc.text(
-    `Entrega: ${
-      order.delivery_type === 'local'
-        ? 'Entrega local en Balcarce'
-        : `Envío (${order.transporte || 'A confirmar'})`
-    }`,
-    14,
-    77
-  )
-  if (order.tracking_code) {
-    doc.text(`Código de seguimiento: ${order.tracking_code}`, 14, 83)
+  doc.setFontSize(5.8)
+  doc.setTextColor(100, 116, 139)
+  doc.text('DOC. NO VÁLIDO', centerX, 29.5, { align: 'center' })
+  doc.text('COMO FACTURA', centerX, 32.5, { align: 'center' })
+
+  // Columna izquierda: Datos del comercio
+  doc.setTextColor(15, 23, 42)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(15)
+  doc.text(config?.name || '3D Copas', margin + 5, 21)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8.5)
+  doc.setTextColor(71, 85, 105)
+  doc.text(config?.slogan || 'Impresión 3D a pedido', margin + 5, 27)
+  const cityLine = [config?.local_city || 'Balcarce', config?.local_province || 'Buenos Aires']
+    .filter(Boolean)
+    .join(', ')
+  doc.text(cityLine, margin + 5, 32.5)
+  if (config?.whatsapp) {
+    doc.text(`Tel / WhatsApp: +${config.whatsapp}`, margin + 5, 38)
+  }
+  if (config?.email) {
+    doc.text(`Email: ${config.email}`, margin + 5, 43)
   }
 
-  // Las 3 fechas obligatorias
+  // Columna derecha: Tipo y número de comprobante
+  const rightX = centerX + boxSize / 2 + 6
+  doc.setTextColor(15, 23, 42)
   doc.setFont('helvetica', 'bold')
-  doc.text('Fechas:', 125, 53)
+  doc.setFontSize(12)
+  doc.text(`COMPROBANTE ${receiptType}`, rightX, 20)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10.5)
+  doc.setTextColor(13, 82, 214) // #0D52D6
+  doc.text(`N° 0001-${String(recNum).padStart(8, '0')}`, rightX, 27)
+
   doc.setFont('helvetica', 'normal')
-  doc.text(`Fecha de pedido: ${formatDate(order.ordered_at)}`, 125, 59)
+  doc.setFontSize(8.5)
+  doc.setTextColor(71, 85, 105)
+  doc.text(`Fecha de emisión: ${formatDate(order.receipt_issued_at || order.ordered_at)}`, rightX, 34)
+  doc.text(`Pedido web: #${order.order_number}`, rightX, 39.5)
+
+  // Bloque de datos del cliente y envío
+  const clientY = 52
+  doc.setFillColor(248, 250, 252) // #F8FAFC
+  doc.setDrawColor(226, 232, 240)
+  doc.setLineWidth(0.3)
+  doc.rect(margin, clientY, contentWidth, 28, 'FD')
+
+  const clientName = customerName || order.guest_name || order.customer?.full_name || 'Consumidor Final'
+  const clientPhone = order.guest_phone || order.customer?.phone || '-'
+
+  doc.setTextColor(15, 23, 42)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8.5)
+  doc.text('CLIENTE', margin + 4, clientY + 6)
+  doc.text('CONDICIONES Y FECHAS', centerX + 4, clientY + 6)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8.5)
+  doc.setTextColor(51, 65, 85)
+  doc.text(`Nombre: ${clientName}`, margin + 4, clientY + 11.5)
+  doc.text(`Teléfono: ${clientPhone}`, margin + 4, clientY + 16.5)
+  doc.text(`Localidad: ${order.city}, ${order.province} (CP ${order.postal_code})`, margin + 4, clientY + 21.5)
+  const deliveryStr =
+    order.delivery_type === 'local'
+      ? 'Retiro / Entrega local'
+      : `Envío: ${order.transporte || 'A confirmar'}${order.tracking_code ? ` (${order.tracking_code})` : ''}`
+  doc.text(deliveryStr, margin + 4, clientY + 26)
+
+  doc.text(
+    `Forma de pago: ${order.payment_method === 'efectivo' ? 'Efectivo' : 'Transferencia bancaria'}`,
+    centerX + 4,
+    clientY + 11.5
+  )
+  doc.text(`Fecha de pedido: ${formatDate(order.ordered_at)}`, centerX + 4, clientY + 16.5)
   doc.text(
     `Entrega coordinada: ${order.delivery_date ? formatDate(order.delivery_date) : 'A coordinar'}`,
-    125,
-    65
+    centerX + 4,
+    clientY + 21.5
   )
   doc.text(
     `Fecha de despacho: ${order.dispatch_date ? formatDate(order.dispatch_date) : 'Pendiente'}`,
-    125,
-    71
-  )
-  doc.text(
-    `Forma de pago: ${order.payment_method === 'efectivo' ? 'Efectivo' : 'Transferencia'}`,
-    125,
-    77
+    centerX + 4,
+    clientY + 26
   )
 
   // Tabla de productos
   const tableRows = (order.items || []).map((item) => [
-    `${item.name}${item.variant ? ` (${item.variant.size})` : ''}${
-      item.color ? ` - ${item.color}` : ''
-    }${item.personalization ? `\nPersonalizado: ${item.personalization}` : ''}`,
     String(item.qty),
+    `${item.name}${item.variant ? ` · ${item.variant.size}` : ''}${
+      item.color ? ` · Color: ${item.color}` : ''
+    }${item.personalization ? `\nPersonalizado: ${item.personalization}` : ''}`,
     formatPrice(item.unit_price),
     formatPrice(item.unit_price * item.qty),
   ])
 
   autoTable(doc, {
-    startY: 92,
-    head: [['Producto / Detalle', 'Cant.', 'Precio unit.', 'Subtotal']],
+    startY: clientY + 34,
+    margin: { left: margin, right: margin },
+    head: [['Cant.', 'Descripción', 'Precio unit.', 'Importe']],
     body: tableRows,
-    headStyles: { fillColor: [36, 86, 214], textColor: 255, fontStyle: 'bold' },
-    styles: { fontSize: 9, cellPadding: 3 },
+    theme: 'plain',
+    headStyles: {
+      fillColor: [241, 245, 249],
+      textColor: [15, 23, 42],
+      fontStyle: 'bold',
+      fontSize: 8.5,
+      lineWidth: { top: 0.3, bottom: 0.5 },
+      lineColor: [148, 163, 184],
+    },
+    bodyStyles: {
+      fontSize: 8.5,
+      textColor: [30, 41, 59],
+      cellPadding: 3,
+      lineWidth: { bottom: 0.2 },
+      lineColor: [226, 232, 240],
+    },
     columnStyles: {
-      1: { halign: 'center', cellWidth: 18 },
+      0: { halign: 'center', cellWidth: 16 },
       2: { halign: 'right', cellWidth: 28 },
-      3: { halign: 'right', cellWidth: 28 },
+      3: { halign: 'right', cellWidth: 30 },
     },
   })
 
-  // Totales
+  // Bloque de totales alineado a la derecha
   const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8
+  const totalsBoxX = pageWidth - margin - 72
+  doc.setDrawColor(226, 232, 240)
+  doc.setLineWidth(0.3)
+  doc.line(totalsBoxX, finalY, pageWidth - margin, finalY)
+
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.text(`Subtotal productos: ${formatPrice(order.subtotal)}`, pageWidth - 14, finalY, {
-    align: 'right',
-  })
+  doc.setFontSize(9)
+  doc.setTextColor(71, 85, 105)
+  doc.text('Subtotal:', totalsBoxX, finalY + 6)
+  doc.text(formatPrice(order.subtotal), pageWidth - margin, finalY + 6, { align: 'right' })
+
+  doc.text('Envío:', totalsBoxX, finalY + 12)
   doc.text(
-    `Envío: ${order.delivery_type === 'local' ? '$0 (Local)' : formatPrice(order.shipping_cost || 0)}`,
-    pageWidth - 14,
-    finalY + 6,
+    order.delivery_type === 'local' ? '$0' : formatPrice(order.shipping_cost || 0),
+    pageWidth - margin,
+    finalY + 12,
     { align: 'right' }
   )
+
+  doc.setDrawColor(15, 23, 42)
+  doc.setLineWidth(0.5)
+  doc.line(totalsBoxX, finalY + 15.5, pageWidth - margin, finalY + 15.5)
+
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(13)
-  doc.setTextColor(36, 86, 214)
-  doc.text(`TOTAL: ${formatPrice(order.total || order.subtotal)}`, pageWidth - 14, finalY + 14, {
+  doc.setFontSize(11.5)
+  doc.setTextColor(15, 23, 42)
+  doc.text('TOTAL:', totalsBoxX, finalY + 22)
+  doc.text(formatPrice(order.total || order.subtotal), pageWidth - margin, finalY + 22, {
     align: 'right',
   })
 
-  // Políticas al pie
-  const policyY = finalY + 26
-  doc.setDrawColor(199, 203, 209)
-  doc.line(14, policyY, pageWidth - 14, policyY)
+  // Pie de página sobrio
+  const policyY = finalY + 34
+  doc.setDrawColor(226, 232, 240)
+  doc.setLineWidth(0.3)
+  doc.line(margin, policyY, pageWidth - margin, policyY)
 
-  doc.setTextColor(100, 105, 115)
+  doc.setTextColor(100, 116, 139)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(8.5)
-  doc.text('Políticas y condiciones:', 14, policyY + 6)
+  doc.setFontSize(8)
+  doc.text('Observaciones y condiciones:', margin, policyY + 5.5)
 
   doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.5)
   const policyText = [
-    config?.returns_policy ||
-      'Arrepentimiento: 10 días hábiles desde la recepción del pedido.',
-    config?.exchange_policy ||
-      'Cambios: cubrimos defectos de impresión o roturas en el envío.',
+    config?.returns_policy || 'Arrepentimiento: 10 días hábiles desde la recepción del pedido.',
+    config?.exchange_policy || 'Cambios: cubrimos defectos de impresión o roturas en el envío.',
   ].join(' ')
-  const splitPolicy = doc.splitTextToSize(policyText, pageWidth - 28)
-  doc.text(splitPolicy, 14, policyY + 11)
+  const splitPolicy = doc.splitTextToSize(policyText, contentWidth)
+  doc.text(splitPolicy, margin, policyY + 10)
+
+  doc.setFontSize(7)
+  doc.setTextColor(148, 163, 184)
+  doc.text(
+    `Documento no válido como factura · ${config?.name || '3D Copas'}`,
+    pageWidth / 2,
+    285,
+    { align: 'center' }
+  )
 
   doc.save(`Comprobante${receiptType}-3DCopas-${String(recNum).padStart(6, '0')}.pdf`)
 }
