@@ -9,7 +9,7 @@ import Input from '@/components/ui/Input'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
-import { Download, Plus, Trash2 } from 'lucide-react'
+import { Download, Plus, Trash2, ShieldAlert, PieChart } from 'lucide-react'
 import {
   ResponsiveContainer,
   BarChart,
@@ -22,6 +22,7 @@ import {
 } from 'recharts'
 
 const PAID_ORDER_STATUSES = ['pagado', 'en_impresion', 'listo', 'despachado', 'entregado']
+const EMERGENCY_CATEGORY = 'Fondo de emergencia'
 
 export default function AdminContabilidadPage() {
   const supabase = createClient()
@@ -57,6 +58,11 @@ export default function AdminContabilidadPage() {
   const [witAmount, setWitAmount] = useState('')
   const [witNote, setWitNote] = useState('')
 
+  // Form fondo de emergencia
+  const [emgDate, setEmgDate] = useState(now.toISOString().slice(0, 10))
+  const [emgAmount, setEmgAmount] = useState('')
+  const [emgNote, setEmgNote] = useState('')
+
   const loadData = useCallback(async () => {
     setLoading(true)
     const [ordRes, incRes, expRes, witRes] = await Promise.all([
@@ -84,7 +90,9 @@ export default function AdminContabilidadPage() {
   // Filtrado por mes seleccionado
   const monthOrders = orders.filter((o) => o.ordered_at.startsWith(selectedMonth))
   const monthManualIncomes = manualIncomes.filter((i) => i.date.startsWith(selectedMonth))
-  const monthExpenses = expenses.filter((e) => e.date.startsWith(selectedMonth))
+  const monthAllExpenses = expenses.filter((e) => e.date.startsWith(selectedMonth))
+  const monthExpenses = monthAllExpenses.filter((e) => e.category !== EMERGENCY_CATEGORY)
+  const monthEmergency = monthAllExpenses.filter((e) => e.category === EMERGENCY_CATEGORY)
   const monthWithdrawals = withdrawals.filter((w) => w.date.startsWith(selectedMonth))
 
   const totalOrdersIncome = monthOrders.reduce((s, o) => s + Number(o.total || o.subtotal), 0)
@@ -92,11 +100,16 @@ export default function AdminContabilidadPage() {
   const totalIncome = totalOrdersIncome + totalManualIncome
   const totalExpenses = monthExpenses.reduce((s, e) => s + Number(e.amount), 0)
   const netProfit = totalIncome - totalExpenses
+  const totalEmergencyMonth = monthEmergency.reduce((s, e) => s + Number(e.amount), 0)
+  const totalEmergencyAccumulated = expenses
+    .filter((e) => e.category === EMERGENCY_CATEGORY)
+    .reduce((s, e) => s + Number(e.amount), 0)
   const totalWithdrawals = monthWithdrawals.reduce((s, w) => s + Number(w.amount), 0)
-  const remainingInBusiness = netProfit - totalWithdrawals
+  const remainingInBusiness = netProfit - totalWithdrawals - totalEmergencyMonth
 
-  // Gastos agrupados por rubro
+  // Gastos operativos agrupados por rubro (excluye fondo de emergencia)
   const expensesByCategory = expenseCategories
+    .filter((cat) => cat !== EMERGENCY_CATEGORY)
     .map((cat) => ({
       category: cat,
       total: monthExpenses
@@ -104,6 +117,47 @@ export default function AdminContabilidadPage() {
         .reduce((s, e) => s + Number(e.amount), 0),
     }))
     .filter((c) => c.total > 0)
+    .sort((a, b) => b.total - a.total)
+
+  // Distribución: "¿A dónde fue la plata?"
+  const distributionItems = [
+    ...expensesByCategory.map((c) => ({
+      label: c.category,
+      amount: c.total,
+      color: 'bg-red-500',
+      badge: 'Gasto',
+    })),
+    ...(totalEmergencyMonth > 0
+      ? [
+          {
+            label: 'Fondo de emergencia',
+            amount: totalEmergencyMonth,
+            color: 'bg-amber-500',
+            badge: 'Reserva',
+          },
+        ]
+      : []),
+    ...(totalWithdrawals > 0
+      ? [
+          {
+            label: 'Retiros personales (mi ganancia)',
+            amount: totalWithdrawals,
+            color: 'bg-[#0D52D6]',
+            badge: 'Retiro',
+          },
+        ]
+      : []),
+    ...(remainingInBusiness > 0
+      ? [
+          {
+            label: 'Disponible en caja del negocio',
+            amount: remainingInBusiness,
+            color: 'bg-emerald-500',
+            badge: 'Caja',
+          },
+        ]
+      : []),
+  ]
 
   // Gráfico últimos 6 meses
   const chartData = []
@@ -119,7 +173,7 @@ export default function AdminContabilidadPage() {
         .filter((m) => m.date.startsWith(key))
         .reduce((s, m) => s + Number(m.amount), 0)
     const exp = expenses
-      .filter((e) => e.date.startsWith(key))
+      .filter((e) => e.date.startsWith(key) && e.category !== EMERGENCY_CATEGORY)
       .reduce((s, e) => s + Number(e.amount), 0)
     const wit = withdrawals
       .filter((w) => w.date.startsWith(key))
@@ -162,6 +216,24 @@ export default function AdminContabilidadPage() {
     }
   }
 
+  const handleAddEmergency = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!emgAmount || Number(emgAmount) <= 0) return
+    const { error } = await supabase.from('expense_entries').insert({
+      date: emgDate,
+      amount: Number(emgAmount),
+      category: EMERGENCY_CATEGORY,
+      note: emgNote.trim() || 'Reserva fondo de emergencia',
+    })
+    if (error) toast.error('Error al guardar en fondo de emergencia')
+    else {
+      toast.success('Guardado en el Fondo de emergencia')
+      setEmgAmount('')
+      setEmgNote('')
+      loadData()
+    }
+  }
+
   const handleAddWithdrawal = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!witAmount || Number(witAmount) <= 0) return
@@ -190,20 +262,19 @@ export default function AdminContabilidadPage() {
   const handleExportExcel = () => {
     const wb = XLSX.utils.book_new()
 
-    // Hoja 1: Resumen
     const resumenRows = [
       { Concepto: 'Mes', Monto: selectedMonth },
       { Concepto: 'Ingresos por pedidos pagados', Monto: totalOrdersIncome },
       { Concepto: 'Ingresos manuales', Monto: totalManualIncome },
       { Concepto: 'Total ingresos', Monto: totalIncome },
-      { Concepto: 'Total gastos', Monto: totalExpenses },
+      { Concepto: 'Gastos operativos', Monto: totalExpenses },
       { Concepto: 'Ganancia neta', Monto: netProfit },
+      { Concepto: 'Fondo de emergencia (mes)', Monto: totalEmergencyMonth },
       { Concepto: 'Retiros personales', Monto: totalWithdrawals },
-      { Concepto: 'Queda en el negocio', Monto: remainingInBusiness },
+      { Concepto: 'Disponible en caja del negocio', Monto: remainingInBusiness },
     ]
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumenRows), 'Resumen')
 
-    // Hoja 2: Ingresos
     const ingresosRows = [
       ...monthOrders.map((o) => ({
         Fecha: formatDate(o.ordered_at),
@@ -220,8 +291,7 @@ export default function AdminContabilidadPage() {
     ]
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ingresosRows), 'Ingresos')
 
-    // Hoja 3: Gastos por rubro
-    const gastosRows = monthExpenses.map((e) => ({
+    const gastosRows = monthAllExpenses.map((e) => ({
       Fecha: formatDate(e.date),
       Rubro: e.category,
       Nota: e.note || '',
@@ -229,27 +299,12 @@ export default function AdminContabilidadPage() {
     }))
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(gastosRows), 'Gastos_por_rubro')
 
-    // Hoja 4: Retiros
     const retirosRows = monthWithdrawals.map((w) => ({
       Fecha: formatDate(w.date),
       Nota: w.note || '',
       Monto: Number(w.amount),
     }))
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(retirosRows), 'Retiros')
-
-    // Hoja 5: Pedidos del mes
-    const pedidosRows = monthOrders.map((o) => ({
-      Pedido: `#${o.order_number}`,
-      Fecha: formatDate(o.ordered_at),
-      Cliente: o.guest_name || '',
-      Ciudad: `${o.city}, ${o.province}`,
-      Entrega: o.delivery_type,
-      Estado: o.status,
-      Subtotal: Number(o.subtotal),
-      Envio: Number(o.shipping_cost),
-      Total: Number(o.total || o.subtotal),
-    }))
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pedidosRows), 'Pedidos_del_mes')
 
     XLSX.writeFile(wb, `Contabilidad-3DCopas-${selectedMonth}.xlsx`)
     toast.success('Excel descargado.')
@@ -262,10 +317,10 @@ export default function AdminContabilidadPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="font-heading text-2xl font-black text-copas-marino">
-            Contabilidad privada
+            Contabilidad y control de plata
           </h1>
           <p className="text-sm text-copas-plata-oscuro">
-            Solo visible para vos. Ingresos, gastos por rubro y retiros.
+            Ingresos totales, ganancia real, gastos por rubro y fondo de emergencia.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
@@ -276,13 +331,13 @@ export default function AdminContabilidadPage() {
             className="border-2 border-copas-plata rounded-lg px-3 py-2 bg-white text-sm font-heading font-bold text-copas-marino"
           />
           <Button size="sm" onClick={handleExportExcel}>
-            <Download size={16} /> Exportar mes a Excel (.xlsx)
+            <Download size={16} /> Exportar mes (.xlsx)
           </Button>
         </div>
       </div>
 
       {/* Resumen del mes */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         <div className="bg-white rounded-card border border-copas-plata p-4">
           <p className="text-xs text-copas-plata-oscuro">Ingresos totales</p>
           <p className="font-heading text-xl font-black text-copas-azul mt-1">
@@ -290,7 +345,7 @@ export default function AdminContabilidadPage() {
           </p>
         </div>
         <div className="bg-white rounded-card border border-copas-plata p-4">
-          <p className="text-xs text-copas-plata-oscuro">Gastos totales</p>
+          <p className="text-xs text-copas-plata-oscuro">Gastos operativos</p>
           <p className="font-heading text-xl font-black text-copas-rojo mt-1">
             {formatPrice(totalExpenses)}
           </p>
@@ -301,18 +356,80 @@ export default function AdminContabilidadPage() {
             {formatPrice(netProfit)}
           </p>
         </div>
+        <div className="bg-amber-50/70 rounded-card border border-amber-200 p-4">
+          <p className="text-xs text-amber-800 font-semibold">Fondo emergencia</p>
+          <p className="font-heading text-xl font-black text-amber-700 mt-1">
+            {formatPrice(totalEmergencyMonth)}
+          </p>
+          <p className="text-[11px] text-amber-700/80 mt-0.5">
+            Acumulado: {formatPrice(totalEmergencyAccumulated)}
+          </p>
+        </div>
         <div className="bg-white rounded-card border border-copas-plata p-4">
           <p className="text-xs text-copas-plata-oscuro">Me llevé (retiros)</p>
           <p className="font-heading text-xl font-black text-copas-marino mt-1">
             {formatPrice(totalWithdrawals)}
           </p>
         </div>
-        <div className="bg-white rounded-card border border-copas-plata p-4 col-span-2 lg:col-span-1">
-          <p className="text-xs text-copas-plata-oscuro">Queda en el negocio</p>
-          <p className="font-heading text-xl font-black text-copas-dorado mt-1">
+        <div className="bg-white rounded-card border border-copas-plata p-4">
+          <p className="text-xs text-copas-plata-oscuro">Queda en caja</p>
+          <p className="font-heading text-xl font-black text-emerald-600 mt-1">
             {formatPrice(remainingInBusiness)}
           </p>
         </div>
+      </div>
+
+      {/* ¿A dónde fue la plata? */}
+      <div className="bg-white rounded-card border border-copas-plata p-5 space-y-4">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <PieChart size={18} className="text-copas-azul" />
+            <h2 className="font-heading font-bold text-copas-marino">
+              ¿A dónde fue la plata en {selectedMonth}?
+            </h2>
+          </div>
+          <span className="text-xs text-copas-plata-oscuro">
+            Sobre un ingreso total de <strong className="text-copas-marino">{formatPrice(totalIncome)}</strong>
+          </span>
+        </div>
+
+        {distributionItems.length === 0 ? (
+          <p className="text-sm text-copas-plata-oscuro">
+            Todavía no cargaste ingresos ni gastos este mes. Cargá abajo tus ingresos, filamento, repuestos o fondo de emergencia para ver el reparto.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {distributionItems.map((item) => {
+              const pct = totalIncome > 0 ? Math.min(100, Math.round((item.amount / totalIncome) * 100)) : 0
+              return (
+                <div key={item.label} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-copas-marino">{item.label}</span>
+                      <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 font-semibold">
+                        {item.badge}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-copas-marino">{formatPrice(item.amount)}</span>
+                      {totalIncome > 0 && (
+                        <span className="text-xs text-copas-plata-oscuro w-10 text-right">
+                          {pct}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="w-full h-2.5 bg-neutral-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${item.color}`}
+                      style={{ width: `${totalIncome > 0 ? pct : 100}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Gráfico + Gastos por rubro */}
@@ -359,7 +476,7 @@ export default function AdminContabilidadPage() {
           <div className="pt-3 border-t border-copas-plata flex gap-2">
             <input
               type="text"
-              placeholder="Nuevo rubro..."
+              placeholder="Nuevo rubro (ej: Resina, Alquiler)..."
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               className="flex-1 border border-copas-plata rounded-lg px-3 py-1.5 text-xs"
@@ -383,44 +500,62 @@ export default function AdminContabilidadPage() {
       </div>
 
       {/* Formularios de carga rápida */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Nuevo gasto */}
-        <form
-          onSubmit={handleAddExpense}
-          className="bg-white rounded-card border border-copas-plata p-4 space-y-3"
-        >
-          <h3 className="font-heading font-bold text-copas-marino">Registrar gasto</h3>
-          <Input label="Fecha" type="date" value={expDate} onChange={(e) => setExpDate(e.target.value)} required />
-          <Input label="Monto ($)" type="number" value={expAmount} onChange={(e) => setExpAmount(e.target.value)} required />
-          <div>
-            <label className="text-sm font-heading font-semibold text-copas-marino block mb-1">Rubro</label>
-            <select
-              value={expCategory}
-              onChange={(e) => setExpCategory(e.target.value)}
-              className="w-full border-2 border-copas-plata rounded-lg px-3 py-2 text-sm bg-white"
-            >
-              {expenseCategories.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <Input label="Nota" value={expNote} onChange={(e) => setExpNote(e.target.value)} placeholder="Ej: 1kg PLA blanco" />
-          <Button type="submit" size="sm" className="w-full">
-            <Plus size={15} /> Agregar gasto
-          </Button>
-        </form>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Ingreso manual */}
         <form
           onSubmit={handleAddIncome}
           className="bg-white rounded-card border border-copas-plata p-4 space-y-3"
         >
-          <h3 className="font-heading font-bold text-copas-marino">Ingreso manual</h3>
+          <h3 className="font-heading font-bold text-copas-marino">1. Registrar ingreso</h3>
           <Input label="Fecha" type="date" value={incDate} onChange={(e) => setIncDate(e.target.value)} required />
-          <Input label="Monto ($)" type="number" value={incAmount} onChange={(e) => setIncAmount(e.target.value)} required />
-          <Input label="Descripción" value={incDesc} onChange={(e) => setIncDesc(e.target.value)} placeholder="Ej: Venta en feria" />
+          <Input label="Monto ($)" type="number" value={incAmount} onChange={(e) => setIncAmount(e.target.value)} placeholder="100000" required />
+          <Input label="Descripción" value={incDesc} onChange={(e) => setIncDesc(e.target.value)} placeholder="Ej: Ventas del mes / feria" />
           <Button type="submit" size="sm" className="w-full">
             <Plus size={15} /> Agregar ingreso
+          </Button>
+        </form>
+
+        {/* Nuevo gasto */}
+        <form
+          onSubmit={handleAddExpense}
+          className="bg-white rounded-card border border-copas-plata p-4 space-y-3"
+        >
+          <h3 className="font-heading font-bold text-copas-marino">2. Registrar gasto</h3>
+          <Input label="Fecha" type="date" value={expDate} onChange={(e) => setExpDate(e.target.value)} required />
+          <Input label="Monto ($)" type="number" value={expAmount} onChange={(e) => setExpAmount(e.target.value)} placeholder="25000" required />
+          <div>
+            <label className="text-sm font-medium text-copas-marino block mb-1">En qué se gastó</label>
+            <select
+              value={expCategory}
+              onChange={(e) => setExpCategory(e.target.value)}
+              className="w-full border-2 border-copas-plata rounded-lg px-3 py-2 text-sm bg-white"
+            >
+              {expenseCategories
+                .filter((c) => c !== EMERGENCY_CATEGORY)
+                .map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+            </select>
+          </div>
+          <Input label="Detalle" value={expNote} onChange={(e) => setExpNote(e.target.value)} placeholder="Ej: 2kg filamento / pico 0.4" />
+          <Button type="submit" size="sm" className="w-full">
+            <Plus size={15} /> Agregar gasto
+          </Button>
+        </form>
+
+        {/* Fondo de emergencia */}
+        <form
+          onSubmit={handleAddEmergency}
+          className="bg-amber-50/50 rounded-card border border-amber-200 p-4 space-y-3"
+        >
+          <h3 className="font-heading font-bold text-amber-900 flex items-center gap-1.5">
+            <ShieldAlert size={16} /> 3. Fondo de emergencia
+          </h3>
+          <Input label="Fecha" type="date" value={emgDate} onChange={(e) => setEmgDate(e.target.value)} required />
+          <Input label="Monto a guardar ($)" type="number" value={emgAmount} onChange={(e) => setEmgAmount(e.target.value)} placeholder="15000" required />
+          <Input label="Nota" value={emgNote} onChange={(e) => setEmgNote(e.target.value)} placeholder="Ej: Reserva por roturas" />
+          <Button type="submit" size="sm" variant="outline" className="w-full border-amber-500 text-amber-800 hover:bg-amber-500 hover:text-white">
+            <Plus size={15} /> Guardar en fondo
           </Button>
         </form>
 
@@ -429,10 +564,10 @@ export default function AdminContabilidadPage() {
           onSubmit={handleAddWithdrawal}
           className="bg-white rounded-card border border-copas-plata p-4 space-y-3"
         >
-          <h3 className="font-heading font-bold text-copas-marino">Registrar retiro (mi ganancia)</h3>
+          <h3 className="font-heading font-bold text-copas-marino">4. Retiro (mi ganancia)</h3>
           <Input label="Fecha" type="date" value={witDate} onChange={(e) => setWitDate(e.target.value)} required />
-          <Input label="Monto ($)" type="number" value={witAmount} onChange={(e) => setWitAmount(e.target.value)} required />
-          <Input label="Nota" value={witNote} onChange={(e) => setWitNote(e.target.value)} placeholder="Ej: Retiro quincena" />
+          <Input label="Monto ($)" type="number" value={witAmount} onChange={(e) => setWitAmount(e.target.value)} placeholder="50000" required />
+          <Input label="Nota" value={witNote} onChange={(e) => setWitNote(e.target.value)} placeholder="Ej: Sueldo / retiro mes" />
           <Button type="submit" size="sm" variant="secondary" className="w-full">
             <Plus size={15} /> Registrar retiro
           </Button>
@@ -450,6 +585,19 @@ export default function AdminContabilidadPage() {
               </span>
               <span className="flex items-center gap-2 font-bold text-copas-rojo">
                 -{formatPrice(e.amount)}
+                <button type="button" onClick={() => handleDeleteEntry('expense_entries', e.id)}>
+                  <Trash2 size={14} />
+                </button>
+              </span>
+            </div>
+          ))}
+          {monthEmergency.map((e) => (
+            <div key={e.id} className="flex items-center justify-between border-b border-copas-plata/40 pb-1.5">
+              <span>
+                🛡️ <strong>{formatDate(e.date)}</strong> · Fondo de emergencia {e.note ? `(${e.note})` : ''}
+              </span>
+              <span className="flex items-center gap-2 font-bold text-amber-700">
+                {formatPrice(e.amount)}
                 <button type="button" onClick={() => handleDeleteEntry('expense_entries', e.id)}>
                   <Trash2 size={14} />
                 </button>

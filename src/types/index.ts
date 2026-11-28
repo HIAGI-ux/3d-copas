@@ -101,10 +101,11 @@ export const ARGENTINA_PROVINCES = [
 
 export const EXPENSE_CATEGORIES = [
   'Filamento',
-  'Electricidad',
   'Repuestos de impresora',
+  'Electricidad',
   'Packaging e insumos',
   'Envíos',
   'Comisiones',
+  'Fondo de emergencia',
   'Otros',
 ]
